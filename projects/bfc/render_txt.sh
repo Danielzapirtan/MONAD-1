@@ -10,9 +10,10 @@ cd myEpub
 unzip myEpub.zip
 cd EPUB/xhtml
 for n in $(ls [0-9]*.xhtml); do
-  cat $n|grep "^.p.*p.$" |cut -b 4,$-4>>$dir/output.txt
+  cat $n | sed -e "^.p.//g" | sed -e "s/..p.$//g" >> /tmp/tmp
 done
 cd $dir
 rm -rf myEpub
+cp /tmp/tmp output.txt
 cat output.txt
 echo "Done."
