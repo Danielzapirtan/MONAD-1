@@ -12,8 +12,7 @@ cd EPUB/xhtml
 for n in $(ls [0-9]*.xhtml); do
 	cat $n \
 		| grep "^.p.*p..?$" \
-		| sed -e "s/^.p.//g" \
-		| sed -e "s/..p..?$//g" >> /tmp/tmp
+		>> /tmp/tmp
 done
 cd $dir
 rm -rf myEpub
