@@ -10,11 +10,10 @@ cd myEpub
 unzip myEpub.zip
 cd EPUB/xhtml
 for n in $(ls [0-9]*.xhtml); do
-	echo "render $n"
 	cat $n \
-		| grep "^.p.*p.$" \
+		| grep "^.p.*p..?$" \
 		| sed -e "s/^.p.//g" \
-		| sed -e "s/..p.$//g" >> /tmp/tmp
+		| sed -e "s/..p..?$//g" >> /tmp/tmp
 done
 cd $dir
 rm -rf myEpub
