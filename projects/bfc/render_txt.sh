@@ -2,19 +2,22 @@
 
 ARG="$1"
 
+dir=$PWD
+rm -rf myEpub
 cp "$ARG" myEpub.zip
 mkdir -p myEpub
-dir=$PWD
 mv myEpub.zip myEpub
 cd myEpub
 unzip myEpub.zip
 cd EPUB/xhtml
-cat [0-9]*.xhtml \
+cat [0-9]*.xhtml >> /tmp/tmp1
+cat /tmp/tmp1 \
 	| dos2unix \
-	| grep "^<p>.*<\/p>$" \
-	>> /tmp/tmp
+	| grep "^<p>" \
+	| sed -e "s/^<p>//g" \
+	| sed -e "s/<\/p>//g" \
+	>> /tmp/tmp2
 cd $dir
-rm -rf myEpub
-cp /tmp/tmp output.txt
-cat output.txt
+cp /tmp/tmp2 output.txt
 echo "Done."
+
