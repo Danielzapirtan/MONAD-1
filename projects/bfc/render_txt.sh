@@ -11,7 +11,8 @@ unzip myEpub.zip
 cd EPUB/xhtml
 for n in $(ls [0-9]*.xhtml); do
 	cat $n \
-		| grep "^.p.*p..?$" \
+		| dos2unix \
+		| grep "^.p.*p.$" \
 		>> /tmp/tmp
 done
 cd $dir
