@@ -19,10 +19,8 @@ cat /tmp/tmp2 \
 	| sed -e "s/^<p>//g" \
 	| sed -e "s|</p>$||g" \
 	>> /tmp/tmp3
-cat /tmp/tmp3 \
-	| sed -e "s/^.*\(page_[[:digit:]]\)\1/\014\$1/g" >>/tmp/tmp4
 cd $dir
-cp /tmp/tmp4 output.txt
+cp /tmp/tmp3 output.txt
 cp output.txt output.txt.md
 txt2pdf output.txt.md output.pdf
 echo "Done."
