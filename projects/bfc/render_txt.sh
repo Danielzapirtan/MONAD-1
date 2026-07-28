@@ -9,12 +9,9 @@ mv myEpub.zip myEpub
 cd myEpub
 unzip myEpub.zip
 cd EPUB/xhtml
-for n in $(ls [0-9]*.xhtml); do
-	dos2unix $n
-	cat $n \
-		| grep "^.p.*p.$" \
-		>> /tmp/tmp
-done
+cat [0-9]*.xhtml \
+	| grep "^.p.*p.$" \
+	>> /tmp/tmp
 cd $dir
 rm -rf myEpub
 cp /tmp/tmp output.txt
