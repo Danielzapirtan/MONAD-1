@@ -5,6 +5,6 @@ from google.colab import drive
 drive.mount("/content/drive/")
 git clone https://github.com/Danielzapirtan/nopaste.git
 %cd nopaste/projects/bfc
-bash render_epub.sh /content/drive/MyDrive/input.epub
+bash render_txt.sh /content/drive/MyDrive/input.epub
 echo TXT il aveti in output.txt
 Done.
