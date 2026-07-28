@@ -20,8 +20,8 @@ cat /tmp/tmp2 \
 	| sed -e "s|</p>$||g" \
 	>> /tmp/tmp3
 cd $dir
-cp /tmp/tmp3 output.txt
+cp /tmp/tmp1 output.txt
 cp output.txt output.txt.md
-txt2pdf output.txt.md output.pdf
+txt2pdf output.txt.md output.pdf --css=myEpub/EPUB/styles/stylesheet.css
 echo "Done."
 
