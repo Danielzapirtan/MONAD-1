@@ -14,10 +14,12 @@ cat [0-9]*.xhtml >> /tmp/tmp1
 cat /tmp/tmp1 \
 	| dos2unix \
 	| grep "^<p>" \
-	| sed -e "s/^\<p\>//g" \
-	| sed -e "s/\<\/p\>$//g" \
 	>> /tmp/tmp2
+cat /tmp/tmp2 \
+	| sed -e "s/^<p>//g" \
+	| sed -e "s|</p>$||g" \
+	>> /tmp/tmp3
 cd $dir
-cp /tmp/tmp2 output.txt
+cp /tmp/tmp3 output.txt
 echo "Done."
 
