@@ -14,8 +14,8 @@ cat [0-9]*.xhtml >> /tmp/tmp1
 cat /tmp/tmp1 \
 	| dos2unix \
 	| grep "^<p>" \
-	| sed -e "s/^<p>//g" \
-	| sed -e "s/<.p>$//g" \
+	| sed -e "s/^\<p\>//g" \
+	| sed -e "s/\<\/p\>$//g" \
 	>> /tmp/tmp2
 cd $dir
 cp /tmp/tmp2 output.txt
