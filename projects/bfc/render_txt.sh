@@ -21,5 +21,7 @@ cat /tmp/tmp2 \
 	>> /tmp/tmp3
 cd $dir
 cp /tmp/tmp3 output.txt
+cp output.txt output.txt.md
+txt2pdf output.txt.md output.pdf
 echo "Done."
 
