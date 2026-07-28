@@ -1,0 +1,10 @@
+%cd /content/
+!apt install git zip
+!rm -rf nopaste
+from google.colab import drive
+drive.mount("/content/drive/")
+git clone https://github.com/Danielzapirtan/nopaste.git
+%cd nopaste
+bash render_epub.sh /content/drive/MyDrive/input.epub
+echo TXT il aveti in output.txt
+Done.
