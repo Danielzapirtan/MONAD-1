@@ -10,6 +10,7 @@ cd myEpub
 unzip myEpub.zip
 cd EPUB/xhtml
 cat [0-9]*.xhtml \
+	| dos2unix \
 	| grep "^.p.*p.$" \
 	>> /tmp/tmp
 cd $dir
