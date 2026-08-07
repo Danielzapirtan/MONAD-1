@@ -94,7 +94,7 @@ TARGET_FORMATS = {"pdf", "docx", "epub", "md", "html", "txt"}
 
 DEFAULT_MODELS = {
     "claude": "claude-sonnet-5",
-    "gemini": "gemini-2.5-flash",
+    "gemini": "gemini-3.1-flash-lite",
 }
 ENV_KEYS = {
     "claude": "ANTHROPIC_API_KEY",
@@ -1687,7 +1687,7 @@ PAGE_HTML = r"""<!DOCTYPE html>
       keyWrap.style.display = enterKey.checked ? 'block' : 'none';
     });
     function updateModelPlaceholder(){
-      modelInput.placeholder = providerSel.value === 'claude' ? 'e.g. claude-sonnet-5' : 'e.g. gemini-2.5-flash';
+      modelInput.placeholder = providerSel.value === 'claude' ? 'e.g. claude-sonnet-5' : 'e.g. gemini-3.1-flash-lite';
     }
     providerSel.addEventListener('change', updateModelPlaceholder);
     updateModelPlaceholder();
