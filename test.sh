@@ -13,6 +13,6 @@ if test -z $VIRTUAL_ENV; then
 fi
 brew install ffmpeg
 pip install -r requirements.txt
-pip install -r requirements-mlx.txt
+pip install whispermlx
 python$VER app.py
 
