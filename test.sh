@@ -1,6 +1,9 @@
 #! /usr/bin/env bash
 
 VER=3.12
+APP="$1"
+
+cd ./projects/$APP
 
 brew install python@$VER
 if test -z $VIRTUAL_ENV; then
