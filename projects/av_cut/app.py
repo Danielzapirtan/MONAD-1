@@ -254,7 +254,7 @@ def run_ai_diarization(segments, provider, api_key, num_speakers=None, speaker_n
         except ImportError:
             raise RuntimeError("The 'google-generativeai' package is not installed on the server (pip install google-generativeai).")
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        model = genai.GenerativeModel("gemini-3.1-flash-lite")
         text = model.generate_content(prompt).text
     else:
         raise RuntimeError(f"Unknown AI provider '{provider}'.")
