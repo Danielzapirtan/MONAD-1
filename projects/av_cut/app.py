@@ -188,13 +188,13 @@ def run_pyannote(path, hf_token, num_speakers=None):
         raise RuntimeError("pyannote.audio is not installed on the server (pip install pyannote.audio).")
     if not hf_token:
         raise RuntimeError("A Hugging Face access token is required for pyannote diarization.")
-    pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization-3.1", token=hf_token)
+    pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization-community-1", token=hf_token)
     diarization = pipeline(path, num_speakers=num_speakers) if num_speakers else pipeline(path)
+
     turns = []
-    for turn, _, speaker in diarization.itertracks(yield_label=True):
+    for turn, speaker in diarization.speaker_diarization:
         turns.append({"start": turn.start, "end": turn.end, "speaker": speaker})
     return turns
-
 
 def assign_speakers_from_turns(segments, turns):
     if not turns:
