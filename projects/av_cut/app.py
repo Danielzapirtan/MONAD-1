@@ -159,11 +159,11 @@ def run_faster_whisper(path, language, device, model_size):
 
 def run_mlx_whisper(path, language, model_size):
     try:
-        import mlx_whisper
+        import whispermlx
     except ImportError:
-        raise RuntimeError("mlx-whisper is not installed on the server (pip install mlx-whisper, Apple Silicon only).")
+        raise RuntimeError("whispermlx is not installed on the server (pip install whispermlx, Apple Silicon only).")
     repo = f"mlx-community/whisper-{model_size}-mlx"
-    result = mlx_whisper.transcribe(path, path_or_hf_repo=repo, language=language)
+    result = whispermlx.transcribe(path, path_or_hf_repo=repo, language=language, output_format='json')
     return [{"start": s["start"], "end": s["end"], "text": s["text"].strip()} for s in result["segments"]]
 
 
