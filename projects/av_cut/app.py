@@ -288,7 +288,79 @@ def media_source(sid):
 # --------------------------------------------------------------------------
 # routes — API
 # --------------------------------------------------------------------------
+@app.route("/api/load", methods=["POST"])
+def api_load():
+    sid = ensure_sid()
+    sess = get_session(sid, create=True)
+    wipe_session_dir(sess)
 
+    src_path = None
+    up = request.files.get("file")
+    url = (request.form.get("url") or "").strip()
+
+    if up and up.filename:
+        ext = os.path.splitext(secure_filename(up.filename))[1].lower() or ".mp4"
+        src_path = os.path.join(sess["dir"], f"source{ext}")
+        up.save(src_path)
+    elif url:
+        # Check if it's a YouTube URL
+        is_youtube = any(domain in url.lower() for domain in ['youtube.com', 'youtu.be'])
+        
+        if is_youtube:
+            try:
+                import yt_dlp
+                ydl_opts = {
+                    'format': 'best[ext=mp4]/best',  # Prefer MP4 format
+                    'outtmpl': os.path.join(sess["dir"], 'source.%(ext)s'),
+                    'quiet': True,
+                    'no_warnings': True,
+                }
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    # Find the downloaded file
+                    downloaded_file = ydl.prepare_filename(info)
+                    # yt-dlp might change the extension, find the actual file
+                    base = os.path.splitext(downloaded_file)[0]
+                    for f in os.listdir(sess["dir"]):
+                        if f.startswith(os.path.basename(base)):
+                            src_path = os.path.join(sess["dir"], f)
+                            break
+                    if not src_path:
+                        return jsonify(error="YouTube download completed but file not found."), 500
+            except ImportError:
+                return jsonify(error="yt-dlp is not installed on the server (pip install yt-dlp)."), 500
+            except Exception as e:
+                return jsonify(error=f"YouTube download failed: {e}"), 400
+        else:
+            # Original URL download logic for non-YouTube URLs
+            ext = os.path.splitext(urlparse(url).path)[1].lower()
+            if ext not in VIDEO_EXTS | AUDIO_EXTS:
+                ext = ".mp4"
+            src_path = os.path.join(sess["dir"], f"source{ext}")
+            try:
+                with requests.get(url, stream=True, timeout=30) as r:
+                    r.raise_for_status()
+                    with open(src_path, "wb") as fh:
+                        for chunk in r.iter_content(65536):
+                            fh.write(chunk)
+            except Exception as e:
+                return jsonify(error=f"Could not download that URL ({e})."), 400
+    else:
+        return jsonify(error="Provide a file or a URL."), 400
+
+    info = probe_media(src_path)
+    if info is None:
+        return jsonify(error="That file doesn't look like a media file ffmpeg can read."), 400
+
+    sess["source"] = {
+        "path": src_path,
+        "ext": os.path.splitext(src_path)[1],
+        "kind": info["kind"],
+        "duration": info["duration"],
+    }
+    return jsonify(kind=info["kind"], duration=info["duration"], src=f"/media/{sid}/source")
+
+'''
 @app.route("/api/load", methods=["POST"])
 def api_load():
     sid = ensure_sid()
@@ -330,7 +402,7 @@ def api_load():
         "duration": info["duration"],
     }
     return jsonify(kind=info["kind"], duration=info["duration"], src=f"/media/{sid}/source")
-
+'''
 
 @app.route("/api/chunk", methods=["POST"])
 def api_add_chunk():
