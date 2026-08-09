@@ -156,16 +156,14 @@ def run_faster_whisper(path, language, device, model_size):
     segments, _info = model.transcribe(path, language=language)
     return [{"start": s.start, "end": s.end, "text": s.text.strip()} for s in segments]
 
-
 def run_mlx_whisper(path, language, model_size):
     try:
-        import mlx-whisper
+        import mlx_whisper
     except ImportError:
         raise RuntimeError("mlx-whisper is not installed on the server (pip install mlx-whisper, Apple Silicon only).")
     repo = f"mlx-community/whisper-{model_size}-mlx"
-    result = mlx-whisper.transcribe(path, path_or_hf_repo=repo, language=language, output_format='json')
+    result = mlx_whisper.transcribe(path, path_or_hf_repo=repo, language=language)
     return [{"start": s["start"], "end": s["end"], "text": s["text"].strip()} for s in result["segments"]]
-
 
 def transcribe_file(path, engine, language, device, model_size):
     if engine == "openai-whisper":
