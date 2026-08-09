@@ -1,7 +1,7 @@
 """
 Media Editor — Flask app
 Load media (upload or URL) -> preview & cut chunks with ffmpeg -> transcribe
-(openai-whisper / faster-whisper / whispermlx) with optional speaker
+(openai-whisper / faster-whisper / mlx-whisper) with optional speaker
 diarization (pyannote.audio or an LLM-based heuristic via Claude/Gemini) ->
 download the transcript and/or a zip of everything.
 
@@ -159,11 +159,11 @@ def run_faster_whisper(path, language, device, model_size):
 
 def run_mlx_whisper(path, language, model_size):
     try:
-        import whispermlx
+        import mlx-whisper
     except ImportError:
-        raise RuntimeError("whispermlx is not installed on the server (pip install whispermlx, Apple Silicon only).")
+        raise RuntimeError("mlx-whisper is not installed on the server (pip install mlx-whisper, Apple Silicon only).")
     repo = f"mlx-community/whisper-{model_size}-mlx"
-    result = whispermlx.transcribe(path, path_or_hf_repo=repo, language=language, output_format='json')
+    result = mlx-whisper.transcribe(path, path_or_hf_repo=repo, language=language, output_format='json')
     return [{"start": s["start"], "end": s["end"], "text": s["text"].strip()} for s in result["segments"]]
 
 
@@ -848,7 +848,7 @@ footer{flex:0 0 auto; padding:9px 22px; text-align:center; font-size:11px; color
             <select id="engineSel">
               <option value="openai-whisper">openai-whisper</option>
               <option value="faster">faster-whisper</option>
-              <option value="mlx">whispermlx (Apple Silicon)</option>
+              <option value="mlx">mlx-whisper (Apple Silicon)</option>
             </select>
           </div>
           <div class="field">
