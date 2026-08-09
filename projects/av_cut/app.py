@@ -1,7 +1,7 @@
 """
 Media Editor — Flask app
 Load media (upload or URL) -> preview & cut chunks with ffmpeg -> transcribe
-(openai-whisper / faster-whisper / mlx-whisper) with optional speaker
+(openai-whisper / faster-whisper / whispermlx) with optional speaker
 diarization (pyannote.audio or an LLM-based heuristic via Claude/Gemini) ->
 download the transcript and/or a zip of everything.
 
@@ -848,7 +848,7 @@ footer{flex:0 0 auto; padding:9px 22px; text-align:center; font-size:11px; color
             <select id="engineSel">
               <option value="openai-whisper">openai-whisper</option>
               <option value="faster">faster-whisper</option>
-              <option value="mlx">mlx-whisper (Apple Silicon)</option>
+              <option value="mlx">whispermlx (Apple Silicon)</option>
             </select>
           </div>
           <div class="field">
