@@ -1028,7 +1028,7 @@ function toast(msg){
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toast._h);
-  toast._h = setTimeout(()=>t.classList.remove('show'), 4200000);
+  toast._h = setTimeout(()=>t.classList.remove('show'), 120000);
 }
 function fmtTs(t){
   t = Math.max(0,t);
