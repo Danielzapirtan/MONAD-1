@@ -156,22 +156,112 @@ def run_faster_whisper(path, language, device, model_size):
     segments, _info = model.transcribe(path, language=language)
     return [{"start": s.start, "end": s.end, "text": s.text.strip()} for s in segments]
 
-def run_mlx_whisper(path, language, model_size):
-    try:
-        import mlx_whisper
-    except ImportError:
-        raise RuntimeError("mlx-whisper is not installed on the server (pip install mlx-whisper, Apple Silicon only).")
-    repo = f"mlx-community/whisper-{model_size}-mlx"
-    result = mlx_whisper.transcribe(path, path_or_hf_repo=repo, language=language)
-    return [{"start": s["start"], "end": s["end"], "text": s["text"].strip()} for s in result["segments"]]
 
-def transcribe_file(path, engine, language, device, model_size):
+def run_mlx_whisper_cli(path, language, model_size, hf_token=None, diarize=False):
+    """Use whispermlx CLI tool instead of Python library.
+    
+    This matches the usage pattern from test.sh and provides native diarization support.
+    """
+    # Check if whispermlx is available
+    if not shutil.which("whispermlx"):
+        raise RuntimeError(
+            "whispermlx command not found. Please install it: pip install mlx-whisper"
+        )
+    
+    # Build command
+    cmd = [
+        "whispermlx",
+        path,
+        "--model", model_size,
+        "--language", language,
+        "--output_format", "json",
+        "--output_dir", os.path.dirname(path),  # Output to chunk directory
+        "--condition_on_previous_text", "False",
+        "--compression_ratio_threshold", "2.4",
+        "--logprob_threshold", "-1.0",
+        "--no_speech_threshold", "0.6",
+    ]
+    
+    # Add diarization if requested
+    if diarize:
+        if not hf_token:
+            raise RuntimeError(
+                "Hugging Face token required for diarization with whispermlx. "
+                "Please provide it in the API key field."
+            )
+        cmd.extend(["--diarize", "--hf_token", hf_token])
+    
+    try:
+        # Run whispermlx
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=1800,  # 30 minutes max
+            check=True
+        )
+        
+        # Find the JSON output file
+        # whispermlx creates a JSON file with the same basename as the audio file
+        base_name = os.path.splitext(os.path.basename(path))[0]
+        json_path = os.path.join(os.path.dirname(path), f"{base_name}.json")
+        
+        if not os.path.exists(json_path):
+            # Try alternative naming patterns
+            for f in os.listdir(os.path.dirname(path)):
+                if f.endswith(".json") and base_name in f:
+                    json_path = os.path.join(os.path.dirname(path), f)
+                    break
+        
+        if not os.path.exists(json_path):
+            raise RuntimeError(
+                f"whispermlx completed but output JSON file not found for {path}"
+            )
+        
+        # Parse the JSON output
+        with open(json_path, 'r') as f:
+            data = json.load(f)
+        
+        # Extract segments
+        segments = []
+        if "segments" in data:
+            for seg in data["segments"]:
+                segment = {
+                    "start": seg["start"],
+                    "end": seg["end"],
+                    "text": seg["text"].strip()
+                }
+                # Include speaker info if available (from diarization)
+                if "speaker" in seg:
+                    segment["speaker"] = seg["speaker"]
+                segments.append(segment)
+        elif "text" in data:
+            # Fallback: create single segment from full text
+            segments.append({
+                "start": 0.0,
+                "end": 0.0,  # Unknown duration
+                "text": data["text"].strip()
+            })
+        
+        return segments
+        
+    except subprocess.CalledProcessError as e:
+        error_msg = e.stderr if e.stderr else e.stdout
+        raise RuntimeError(
+            f"whispermlx failed with error:\n{error_msg[:500]}"
+        )
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"Failed to parse whispermlx output: {e}")
+
+
+def transcribe_file(path, engine, language, device, model_size, hf_token=None, diarize=False):
     if engine == "openai-whisper":
         return run_whisper_openai(path, language, device, model_size)
     if engine == "faster":
         return run_faster_whisper(path, language, device, model_size)
     if engine == "mlx":
-        return run_mlx_whisper(path, language, model_size)
+        # Now using the CLI version that supports native diarization
+        return run_mlx_whisper_cli(path, language, model_size, hf_token, diarize)
     raise RuntimeError(f"Unknown transcription engine '{engine}'.")
 
 
@@ -193,6 +283,7 @@ def run_pyannote(path, hf_token, num_speakers=None):
     for turn, speaker in diarization.speaker_diarization:
         turns.append({"start": turn.start, "end": turn.end, "speaker": speaker})
     return turns
+
 
 def assign_speakers_from_turns(segments, turns):
     if not turns:
@@ -358,6 +449,7 @@ def api_load():
     }
     return jsonify(kind=info["kind"], duration=info["duration"], src=f"/media/{sid}/source")
 
+
 @app.route("/api/chunk", methods=["POST"])
 def api_add_chunk():
     sid = get_sid_or_none()
@@ -444,16 +536,33 @@ def api_transcribe():
     all_segments = []
     try:
         for item in sources:
-            segs = transcribe_file(item["path"], engine, language, device, model_size)
+            # For MLX engine, pass diarization parameters directly
+            if engine == "mlx" and diarize:
+                # whispermlx CLI handles diarization natively
+                segs = transcribe_file(
+                    item["path"], engine, language, device, model_size,
+                    hf_token=api_key, diarize=True
+                )
+            else:
+                segs = transcribe_file(
+                    item["path"], engine, language, device, model_size
+                )
+            
             offset = item.get("start", 0.0)
             for s in segs:
-                all_segments.append({"start": s["start"] + offset, "end": s["end"] + offset, "text": s["text"]})
+                segment = {"start": s["start"] + offset, "end": s["end"] + offset, "text": s["text"]}
+                # Preserve speaker info from MLX native diarization
+                if s.get("speaker"):
+                    segment["speaker"] = s["speaker"]
+                all_segments.append(segment)
+                
     except RuntimeError as e:
         return jsonify(error=str(e)), 500
     except Exception as e:
         return jsonify(error=f"Transcription failed: {e}"), 500
 
-    if diarize:
+    # Handle diarization for non-MLX engines or when MLX didn't provide speakers
+    if diarize and not any(s.get("speaker") for s in all_segments):
         num_speakers = int(speaker_count) if (name_speakers and speaker_mode == "count" and speaker_count) else None
         names = speaker_names if (name_speakers and speaker_mode == "names" and speaker_names) else None
         try:
@@ -465,19 +574,22 @@ def api_transcribe():
                     for x in t:
                         turns.append({"start": x["start"] + off, "end": x["end"] + off, "speaker": x["speaker"]})
                 assign_speakers_from_turns(all_segments, turns)
-                if names:
-                    mapping = {}
-                    for seg in all_segments:
-                        if seg["speaker"] not in mapping:
-                            mapping[seg["speaker"]] = names[len(mapping)] if len(mapping) < len(names) else seg["speaker"]
-                    for seg in all_segments:
-                        seg["speaker"] = mapping[seg["speaker"]]
             elif diarize_method == "ai_api":
                 labels = run_ai_diarization(all_segments, ai_provider, api_key, num_speakers, names)
                 for seg, label in zip(all_segments, labels):
                     seg["speaker"] = label
             else:
                 return jsonify(error="Choose a diarization method (pyannote or AI API)."), 400
+                
+            # Apply speaker names if provided
+            if names and diarize_method != "ai_api":
+                mapping = {}
+                for seg in all_segments:
+                    if seg["speaker"] not in mapping:
+                        mapping[seg["speaker"]] = names[len(mapping)] if len(mapping) < len(names) else seg["speaker"]
+                for seg in all_segments:
+                    seg["speaker"] = mapping.get(seg["speaker"], seg["speaker"])
+                    
         except RuntimeError as e:
             return jsonify(error=str(e)), 500
         except Exception as e:
