@@ -1,0 +1,5 @@
+flask
+pytube
+yt-dlp
+browser-cookie3
+requests
