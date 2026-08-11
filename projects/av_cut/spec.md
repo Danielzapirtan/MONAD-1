@@ -15,10 +15,11 @@ html
       main-container
         tabs
           tab "load media"
-            select ["upload-file", "enter-url"]
+            radio ["upload-file", "enter-url"]
             union
               input [type="file"]
               input [type="url"]
+                checkbox use-browser-cookies
             submit-btn "load-file"
           tab "preview and cut"
             sync elements
