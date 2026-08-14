@@ -507,6 +507,46 @@ def api_delete_chunk(cid):
     return jsonify(chunks=[{k: v for k, v in c.items() if k != "path"} for c in sess["chunks"]])
 
 
+@app.route("/api/chunk/<int:cid>/download")
+def download_chunk(cid):
+    sid = get_sid_or_none()
+    sess = get_session(sid) if sid else None
+    if not sess:
+        abort(404)
+    
+    chunk = next((c for c in sess.get("chunks", []) if c["id"] == cid), None)
+    if not chunk or not os.path.exists(chunk["path"]):
+        abort(404)
+    
+    return send_file(
+        chunk["path"], 
+        as_attachment=True, 
+        download_name=chunk["filename"]
+    )
+
+
+@app.route("/api/chunks/download")
+def download_all_chunks():
+    sid = get_sid_or_none()
+    sess = get_session(sid) if sid else None
+    if not sess or not sess.get("chunks"):
+        abort(404)
+    
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for c in sess["chunks"]:
+            if os.path.exists(c["path"]):
+                z.write(c["path"], arcname=f"chunk_{c['id']}{os.path.splitext(c['filename'])[1]}")
+    
+    buf.seek(0)
+    return send_file(
+        buf, 
+        as_attachment=True, 
+        download_name="chunks.zip", 
+        mimetype="application/zip"
+    )
+
+
 @app.route("/api/transcribe", methods=["POST"])
 def api_transcribe():
     sid = get_sid_or_none()
@@ -903,6 +943,9 @@ footer{flex:0 0 auto; padding:9px 22px; text-align:center; font-size:11px; color
           <label>Chunks</label>
           <ul id="chunkList"></ul>
           <div class="empty-note" id="chunkEmptyNote">No chunks yet — transcription will use the full file.</div>
+          <div style="margin-top: 10px;">
+            <button class="btn secondary small hidden" id="downloadAllChunksBtn">Download all chunks</button>
+          </div>
         </div>
       </div>
 
@@ -1182,21 +1225,53 @@ function renderChunkList(){
   const ul = document.getElementById('chunkList');
   ul.innerHTML = '';
   document.getElementById('chunkEmptyNote').classList.toggle('hidden', state.chunks.length>0);
+  
+  // Show/hide download all button
+  const downloadAllBtn = document.getElementById('downloadAllChunksBtn');
+  if (downloadAllBtn) {
+    downloadAllBtn.classList.toggle('hidden', state.chunks.length === 0);
+  }
+  
   state.chunks.forEach(c=>{
     const li = document.createElement('li');
     li.innerHTML = `<span><span class="idx">#${c.id}</span> <span class="meta">${fmtTs(c.start)} – ${fmtTs(c.end)} (${c.duration.toFixed(2)}s)</span></span>`;
+    
+    // Create button container
+    const btnContainer = document.createElement('div');
+    btnContainer.style.display = 'flex';
+    btnContainer.style.gap = '6px';
+    
+    // Download button (left of trash icon)
+    const downloadBtn = document.createElement('button');
+    downloadBtn.className = 'btn secondary small';
+    downloadBtn.textContent = 'Download';
+    downloadBtn.title = 'Download this chunk';
+    downloadBtn.addEventListener('click', ()=>{
+      window.location.href = `/api/chunk/${c.id}/download`;
+    });
+    
+    // Delete button (existing trash icon)
     const delBtn = document.createElement('button');
-    delBtn.className = 'btn danger small'; delBtn.textContent = 'Remove';
+    delBtn.className = 'btn danger small';
+    delBtn.textContent = 'Remove';
     delBtn.addEventListener('click', async ()=>{
       try{
         const data = await api(`/api/chunk/${c.id}`, {method:'DELETE'});
-        state.chunks = data.chunks; renderChunkList();
+        state.chunks = data.chunks; 
+        renderChunkList();
       }catch(e){ toast(e.message); }
     });
-    li.appendChild(delBtn);
+    
+    btnContainer.appendChild(downloadBtn);
+    btnContainer.appendChild(delBtn);
+    li.appendChild(btnContainer);
     ul.appendChild(li);
   });
 }
+
+document.getElementById('downloadAllChunksBtn').addEventListener('click', ()=>{
+  window.location.href = '/api/chunks/download';
+});
 
 // ---------- tab 3: transcription controls ----------
 const engineSel = document.getElementById('engineSel');
