@@ -391,7 +391,7 @@ def extract_epub(path):
 
 
 def extract_txt(path):
-    with open(path, "r", encoding="utf-8", errors="replace") as f:
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
         content = f.read()
     blocks = []
     for para in re.split(r"\n\s*\n", content):
@@ -407,7 +407,7 @@ def extract_txt(path):
 
 
 def extract_md(path):
-    with open(path, "r", encoding="utf-8", errors="replace") as f:
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
         content = f.read()
     blocks = []
     buf = []
@@ -439,7 +439,7 @@ def extract_md(path):
 def extract_html(path):
     if BeautifulSoup is None:
         raise RuntimeError("beautifulsoup4 is required to read HTML files. Install with: pip install beautifulsoup4 lxml")
-    with open(path, "r", encoding="utf-8", errors="replace") as f:
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
         content = f.read()
     try:
         soup = BeautifulSoup(content, "lxml")
