@@ -14,5 +14,5 @@ fi
 brew install ffmpeg
 pip install -r requirements.txt
 pip install whispermlx
-python$VER app.py
 
+python$VER app.py &
