@@ -302,7 +302,7 @@ def assign_speakers_from_turns(segments, turns):
         seg["speaker"] = best["speaker"]
 
 
-def run_ai_diarization(segments, provider, api_key, num_speakers=None, speaker_names=None):
+def run_ai_diarization(segments, provider, api_key, num_speakers=None):
     """Heuristic, text-based speaker labeling via an LLM (no separate audio model)."""
     if not api_key:
         raise RuntimeError("An API key is required for AI-based diarization.")
@@ -311,9 +311,7 @@ def run_ai_diarization(segments, provider, api_key, num_speakers=None, speaker_n
                for i, s in enumerate(segments)]
 
     constraint = ""
-    if speaker_names:
-        constraint = f"There are exactly {len(speaker_names)} speakers, named (in some order): {speaker_names}. Use these exact names as labels."
-    elif num_speakers:
+    if num_speakers:
         constraint = f"There are exactly {num_speakers} speakers. Label them SPEAKER_00, SPEAKER_01, ... "
     else:
         constraint = "Infer a reasonable number of distinct speakers from context and label them SPEAKER_00, SPEAKER_01, ..."
@@ -563,10 +561,7 @@ def api_transcribe():
     diarize_method = d.get("diarize_method")           # 'pyannote' | 'ai_api'
     ai_provider = d.get("ai_provider")                  # 'gemini' | 'claude'
     api_key = d.get("api_key")
-    name_speakers = bool(d.get("name_speakers"))
-    speaker_mode = d.get("speaker_mode")                # 'count' | 'names'
-    speaker_count = d.get("speaker_count")
-    speaker_names = d.get("speaker_names") or []
+    num_speakers = d.get("num_speakers")
 
     sources = sess["chunks"] if sess["chunks"] else [{
         "start": 0.0, "path": sess["source"]["path"],
@@ -603,8 +598,6 @@ def api_transcribe():
 
     # Handle diarization for non-MLX engines or when MLX didn't provide speakers
     if diarize and not any(s.get("speaker") for s in all_segments):
-        num_speakers = int(speaker_count) if (name_speakers and speaker_mode == "count" and speaker_count) else None
-        names = speaker_names if (name_speakers and speaker_mode == "names" and speaker_names) else None
         try:
             if diarize_method == "pyannote":
                 turns = []
@@ -615,20 +608,11 @@ def api_transcribe():
                         turns.append({"start": x["start"] + off, "end": x["end"] + off, "speaker": x["speaker"]})
                 assign_speakers_from_turns(all_segments, turns)
             elif diarize_method == "ai_api":
-                labels = run_ai_diarization(all_segments, ai_provider, api_key, num_speakers, names)
+                labels = run_ai_diarization(all_segments, ai_provider, api_key, num_speakers)
                 for seg, label in zip(all_segments, labels):
                     seg["speaker"] = label
             else:
                 return jsonify(error="Choose a diarization method (pyannote or AI API)."), 400
-                
-            # Apply speaker names if provided
-            if names and diarize_method != "ai_api":
-                mapping = {}
-                for seg in all_segments:
-                    if seg["speaker"] not in mapping:
-                        mapping[seg["speaker"]] = names[len(mapping)] if len(mapping) < len(names) else seg["speaker"]
-                for seg in all_segments:
-                    seg["speaker"] = mapping.get(seg["speaker"], seg["speaker"])
                     
         except RuntimeError as e:
             return jsonify(error=str(e)), 500
@@ -643,6 +627,40 @@ def api_transcribe():
     sess["transcript"] = transcript
     sess["segments"] = all_segments
     return jsonify(transcript=transcript, segments=all_segments)
+
+
+@app.route("/api/rename_speakers", methods=["POST"])
+def api_rename_speakers():
+    sid = get_sid_or_none()
+    sess = get_session(sid) if sid else None
+    if not sess or not sess.get("transcript"):
+        return jsonify(error="No transcript found."), 400
+    
+    data = request.get_json(force=True, silent=True) or {}
+    speaker_mapping = data.get("speaker_mapping", {})
+    
+    if not speaker_mapping:
+        return jsonify(error="No speaker mapping provided."), 400
+    
+    # Apply the mapping to segments
+    updated_segments = []
+    for seg in sess["segments"]:
+        new_seg = seg.copy()
+        if seg.get("speaker") and seg["speaker"] in speaker_mapping:
+            new_seg["speaker"] = speaker_mapping[seg["speaker"]]
+        updated_segments.append(new_seg)
+    
+    # Regenerate transcript
+    lines = []
+    for seg in updated_segments:
+        prefix = f"{seg['speaker']}: " if seg.get("speaker") else ""
+        lines.append(f"[{fmt_ts(seg['start'])} - {fmt_ts(seg['end'])}] {prefix}{seg['text']}")
+    transcript = "\n".join(lines)
+    
+    sess["segments"] = updated_segments
+    sess["transcript"] = transcript
+    
+    return jsonify(transcript=transcript, segments=updated_segments)
 
 
 @app.route("/api/download/transcription")
@@ -1013,26 +1031,6 @@ footer{flex:0 0 auto; padding:9px 22px; text-align:center; font-size:11px; color
           </div>
 
           <div class="checkline">
-            <input type="checkbox" id="nameSpeakersCk"><label for="nameSpeakersCk">Name the speakers</label>
-          </div>
-          <div class="subrow hidden" id="nameSpeakersSub">
-            <div class="checkline">
-              <input type="radio" name="speakerMode" id="speakerCountRb" checked>
-              <label for="speakerCountRb">I just know how many speakers</label>
-              <input type="number" id="speakerCountInput" min="1" max="20" value="2" style="width:64px; margin-left:8px;">
-            </div>
-            <div class="checkline">
-              <input type="radio" name="speakerMode" id="speakerNamesRb">
-              <label for="speakerNamesRb">I'll name each speaker</label>
-            </div>
-            <div class="speaker-name-list hidden" id="speakerNameList">
-              <div class="sn-row"><span>Speaker 1</span><input type="text" class="snInput" placeholder="e.g. Alex"></div>
-              <div class="sn-row"><span>Speaker 2</span><input type="text" class="snInput" placeholder="e.g. Jordan"></div>
-              <button class="btn secondary small" id="addSpeakerNameBtn" style="width:fit-content">+ add speaker</button>
-            </div>
-          </div>
-
-          <div class="checkline">
             <input type="checkbox" id="apiKeyCk" disabled><label for="apiKeyCk">API key</label>
           </div>
           <div class="subrow hidden" id="apiKeySub">
@@ -1050,6 +1048,15 @@ footer{flex:0 0 auto; padding:9px 22px; text-align:center; font-size:11px; color
           <button class="btn secondary" id="downloadTxtBtn">Download transcription</button>
           <button class="btn secondary" id="downloadZipBtn">Download zip file</button>
         </div>
+        <div id="speakerRenamePanel" class="hidden" style="margin-top: 10px;">
+          <fieldset>
+            <legend>Rename speakers</legend>
+            <div id="speakerRenameList"></div>
+            <div style="margin-top: 10px;">
+              <button class="btn" id="applySpeakerNamesBtn">Apply names</button>
+            </div>
+          </fieldset>
+        </div>
       </div>
 
     </div>
@@ -1063,7 +1070,7 @@ footer{flex:0 0 auto; padding:9px 22px; text-align:center; font-size:11px; color
 <div class="toast" id="toast"></div>
 
 <script>
-const state = { kind:null, duration:0, chunks:[] };
+const state = { kind:null, duration:0, chunks:[], segments:[] };
 
 // ---------- utils ----------
 function toast(msg){
@@ -1281,12 +1288,6 @@ const diarizeFields = document.getElementById('diarizeFields');
 const pyannoteCk = document.getElementById('pyannoteCk');
 const aiApiCk = document.getElementById('aiApiCk');
 const aiApiSub = document.getElementById('aiApiSub');
-const nameSpeakersCk = document.getElementById('nameSpeakersCk');
-const nameSpeakersSub = document.getElementById('nameSpeakersSub');
-const speakerCountRb = document.getElementById('speakerCountRb');
-const speakerNamesRb = document.getElementById('speakerNamesRb');
-const speakerCountInput = document.getElementById('speakerCountInput');
-const speakerNameList = document.getElementById('speakerNameList');
 const apiKeyCk = document.getElementById('apiKeyCk');
 const apiKeySub = document.getElementById('apiKeySub');
 const apiKeyInput = document.getElementById('apiKeyInput');
@@ -1305,7 +1306,7 @@ updateDeviceOptions();
 diarizeCk.addEventListener('change', ()=>{
   diarizeFields.disabled = !diarizeCk.checked;
   if(!diarizeCk.checked){
-    pyannoteCk.checked = false; aiApiCk.checked = false; nameSpeakersCk.checked = false;
+    pyannoteCk.checked = false; aiApiCk.checked = false;
   }
   updateDiarizeUI();
 });
@@ -1316,26 +1317,10 @@ function setMutex(checkedBox, otherBox){
 pyannoteCk.addEventListener('change', ()=>{ if(pyannoteCk.checked) aiApiCk.checked = false; updateDiarizeUI(); });
 aiApiCk.addEventListener('change', ()=>{ if(aiApiCk.checked) pyannoteCk.checked = false; updateDiarizeUI(); });
 
-nameSpeakersCk.addEventListener('change', updateDiarizeUI);
-speakerCountRb.addEventListener('change', updateDiarizeUI);
-speakerNamesRb.addEventListener('change', updateDiarizeUI);
-
-document.getElementById('addSpeakerNameBtn').addEventListener('click', ()=>{
-  const rows = speakerNameList.querySelectorAll('.sn-row').length;
-  const row = document.createElement('div');
-  row.className = 'sn-row';
-  row.innerHTML = `<span>Speaker ${rows+1}</span><input type="text" class="snInput" placeholder="name">`;
-  speakerNameList.insertBefore(row, document.getElementById('addSpeakerNameBtn'));
-});
-
 function updateDiarizeUI(){
   setMutex(pyannoteCk, aiApiCk);
   setMutex(aiApiCk, pyannoteCk);
   aiApiSub.classList.toggle('hidden', !aiApiCk.checked);
-
-  nameSpeakersSub.classList.toggle('hidden', !nameSpeakersCk.checked);
-  speakerCountInput.disabled = !(nameSpeakersCk.checked && speakerCountRb.checked);
-  speakerNameList.classList.toggle('hidden', !(nameSpeakersCk.checked && speakerNamesRb.checked));
 
   const needsKey = pyannoteCk.checked || aiApiCk.checked;
   apiKeyCk.checked = needsKey;
@@ -1353,7 +1338,6 @@ document.getElementById('transcribeBtn').addEventListener('click', async ()=>{
   if(diarize && (pyannoteCk.checked || aiApiCk.checked) && !apiKeyInput.value.trim()){
     toast('An API key / token is required for the selected diarization method.'); return;
   }
-  const speakerNames = [...speakerNameList.querySelectorAll('.snInput')].map(i=>i.value.trim()).filter(Boolean);
 
   const payload = {
     engine: engineSel.value,
@@ -1364,10 +1348,6 @@ document.getElementById('transcribeBtn').addEventListener('click', async ()=>{
     diarize_method: pyannoteCk.checked ? 'pyannote' : (aiApiCk.checked ? 'ai_api' : null),
     ai_provider: document.getElementById('aiProviderSel').value,
     api_key: apiKeyInput.value.trim(),
-    name_speakers: nameSpeakersCk.checked,
-    speaker_mode: speakerCountRb.checked ? 'count' : 'names',
-    speaker_count: speakerCountInput.value,
-    speaker_names: speakerNames,
   };
 
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Transcribing…';
@@ -1375,13 +1355,91 @@ document.getElementById('transcribeBtn').addEventListener('click', async ()=>{
     const data = await api('/api/transcribe', {
       method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload),
     });
+    state.segments = data.segments;
     document.getElementById('transcriptOut').value = data.transcript;
+    setupSpeakerRenamePanel(data.segments);
     goTab('extract');
   }catch(e){ toast(e.message); }
   finally{ btn.disabled = false; btn.textContent = 'Transcribe'; }
 });
 
 // ---------- tab 4: results ----------
+function setupSpeakerRenamePanel(segments){
+  const panel = document.getElementById('speakerRenamePanel');
+  const list = document.getElementById('speakerRenameList');
+  
+  // Clear existing content
+  list.innerHTML = '';
+  
+  // Get unique speakers from segments
+  const speakers = new Set();
+  segments.forEach(seg => {
+    if (seg.speaker) {
+      speakers.add(seg.speaker);
+    }
+  });
+  
+  // Hide panel if no speakers or only one speaker
+  if (speakers.size <= 1) {
+    panel.classList.add('hidden');
+    return;
+  }
+  
+  // Show panel and create input fields
+  panel.classList.remove('hidden');
+  speakers.forEach(speaker => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; gap:8px; align-items:center; margin-bottom:8px;';
+    row.innerHTML = `
+      <span style="font-family:var(--font-mono); color:var(--text-faint); font-size:11.5px; width:100px;">${speaker}</span>
+      <input type="text" class="speaker-rename-input" data-original="${speaker}" placeholder="Enter name" style="flex:1;">
+    `;
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('applySpeakerNamesBtn').addEventListener('click', async ()=>{
+  const inputs = document.querySelectorAll('.speaker-rename-input');
+  const speakerMapping = {};
+  let hasChanges = false;
+  
+  inputs.forEach(input => {
+    const original = input.dataset.original;
+    const newName = input.value.trim();
+    if (newName && newName !== original) {
+      speakerMapping[original] = newName;
+      hasChanges = true;
+    }
+  });
+  
+  if (!hasChanges) {
+    toast('No speaker names to apply.');
+    return;
+  }
+  
+  const btn = document.getElementById('applySpeakerNamesBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Applying…';
+  
+  try {
+    const data = await api('/api/rename_speakers', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({speaker_mapping: speakerMapping}),
+    });
+    
+    state.segments = data.segments;
+    document.getElementById('transcriptOut').value = data.transcript;
+    setupSpeakerRenamePanel(data.segments);
+    toast('Speaker names applied successfully.');
+  } catch(e) {
+    toast(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Apply names';
+  }
+});
+
 document.getElementById('downloadTxtBtn').addEventListener('click', ()=>{
   window.location.href = '/api/download/transcription';
 });
