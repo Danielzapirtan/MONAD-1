@@ -108,18 +108,47 @@ def probe_media(path):
             duration = None
 
     has_video = False
+    video_info = {}
+    audio_info = {}
+    
     for s in data.get("streams", []):
         if s.get("codec_type") == "video" and s.get("codec_name") not in ("mjpeg", "png", "bmp"):
             has_video = True
+            video_info = {
+                "codec": s.get("codec_name", "unknown"),
+                "width": s.get("width"),
+                "height": s.get("height"),
+                "fps": s.get("r_frame_rate"),
+                "bitrate": s.get("bit_rate")
+            }
         if duration is None and s.get("duration"):
             try:
                 duration = max(duration or 0.0, float(s["duration"]))
             except ValueError:
                 pass
+        if s.get("codec_type") == "audio":
+            audio_info = {
+                "codec": s.get("codec_name", "unknown"),
+                "sample_rate": s.get("sample_rate"),
+                "channels": s.get("channels"),
+                "bitrate": s.get("bit_rate")
+            }
 
     if duration is None:
         return None
-    return {"kind": "video" if has_video else "audio", "duration": duration}
+    
+    # Get file size and format info
+    file_size = os.path.getsize(path)
+    format_name = fmt.get("format_name", "unknown")
+    
+    return {
+        "kind": "video" if has_video else "audio",
+        "duration": duration,
+        "file_size": file_size,
+        "format": format_name,
+        "video_info": video_info if has_video else None,
+        "audio_info": audio_info
+    }
 
 
 def cut_chunk(source_path, kind, start, end, out_path):
@@ -396,9 +425,11 @@ def api_load():
         if is_youtube:
             try:
                 import yt_dlp
+                # Get format options from request
+                format_option = request.form.get('format_option', 'best')
+                
                 ydl_opts = {
-                    't': 'mp3',
-                    'format': 'best[ext=mp4]/best',  # Prefer MP4 format
+                    'format': format_option,
                     'outtmpl': os.path.join(sess["dir"], 'source.%(ext)s'),
                     'quiet': True,
                     'no_warnings': True,
@@ -445,8 +476,68 @@ def api_load():
         "ext": os.path.splitext(src_path)[1],
         "kind": info["kind"],
         "duration": info["duration"],
+        "file_size": info["file_size"],
+        "format": info["format"],
+        "video_info": info["video_info"],
+        "audio_info": info["audio_info"]
     }
-    return jsonify(kind=info["kind"], duration=info["duration"], src=f"/media/{sid}/source")
+    return jsonify(
+        kind=info["kind"], 
+        duration=info["duration"], 
+        src=f"/media/{sid}/source",
+        file_size=info["file_size"],
+        format=info["format"],
+        video_info=info["video_info"],
+        audio_info=info["audio_info"]
+    )
+
+
+@app.route("/api/youtube/formats", methods=["POST"])
+def api_youtube_formats():
+    """Get available download formats for a YouTube URL."""
+    data = request.get_json(force=True, silent=True) or {}
+    url = (data.get("url") or "").strip()
+    
+    if not url:
+        return jsonify(error="Provide a YouTube URL."), 400
+    
+    # Check if it's a YouTube URL
+    is_youtube = any(domain in url.lower() for domain in ['youtube.com', 'youtu.be'])
+    if not is_youtube:
+        return jsonify(error="Not a YouTube URL."), 400
+    
+    try:
+        import yt_dlp
+        
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            
+            formats = []
+            for f in info.get('formats', []):
+                format_info = {
+                    'format_id': f.get('format_id'),
+                    'ext': f.get('ext'),
+                    'resolution': f.get('resolution') or f"{f.get('width', '?')}x{f.get('height', '?')}",
+                    'fps': f.get('fps'),
+                    'vcodec': f.get('vcodec'),
+                    'acodec': f.get('acodec'),
+                    'filesize': f.get('filesize'),
+                    'filesize_approx': f.get('filesize_approx'),
+                    'format_note': f.get('format_note'),
+                    'quality': f.get('quality'),
+                }
+                formats.append(format_info)
+            
+            return jsonify(formats=formats)
+    except ImportError:
+        return jsonify(error="yt-dlp is not installed on the server (pip install yt-dlp)."), 500
+    except Exception as e:
+        return jsonify(error=f"Failed to get YouTube formats: {e}"), 400
 
 
 @app.route("/api/chunk", methods=["POST"])
@@ -819,6 +910,51 @@ legend{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var
 }
 .mode-toggle button.active{background:var(--amber); color:#181205; font-weight:600;}
 
+/* --- media info panel --- */
+.media-info-panel{
+  display:flex; flex-direction:column; gap:8px; background:var(--panel-2);
+  border:1px solid var(--border); border-radius:8px; padding:14px 16px;
+  font-size:13px;
+}
+.media-info-panel .info-title{
+  font-family:var(--font-display); font-weight:600; font-size:14px; color:var(--amber);
+}
+.media-info-panel .info-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:8px;
+}
+.media-info-panel .info-item{
+  display:flex; flex-direction:column; gap:3px;
+}
+.media-info-panel .info-label{
+  font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.04em;
+}
+.media-info-panel .info-value{
+  font-family:var(--font-mono); font-size:12.5px; color:var(--text);
+}
+
+/* --- format selection --- */
+.format-selector{
+  display:flex; flex-direction:column; gap:10px;
+  background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:14px 16px;
+}
+.format-selector .format-list{
+  max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;
+}
+.format-selector .format-item{
+  display:flex; align-items:center; gap:8px; padding:8px 10px;
+  background:var(--panel); border:1px solid var(--border); border-radius:6px;
+  cursor:pointer; transition:border-color .15s;
+}
+.format-selector .format-item:hover{border-color:var(--amber);}
+.format-selector .format-item.selected{border-color:var(--amber); background:rgba(232,163,61,0.1);}
+.format-selector .format-item input[type=radio]{accent-color:var(--amber);}
+.format-selector .format-item .format-label{
+  flex:1; font-family:var(--font-mono); font-size:12px; color:var(--text);
+}
+.format-selector .format-item .format-meta{
+  font-size:11px; color:var(--text-faint);
+}
+
 /* --- preview & cut --- */
 .preview-wrap{background:#000; border:1px solid var(--border); border-radius:9px; overflow:hidden; max-height:38vh; display:flex; align-items:center; justify-content:center;}
 video, audio{width:100%; display:block;}
@@ -896,6 +1032,7 @@ footer{flex:0 0 auto; padding:9px 22px; text-align:center; font-size:11px; color
   .tab-panel{padding:16px;}
   .row > .field{min-width:120px;}
   .preview-wrap{max-height:26vh;}
+  .media-info-panel .info-grid{grid-template-columns:1fr;}
 }
 </style>
 </head>
@@ -930,7 +1067,23 @@ footer{flex:0 0 auto; padding:9px 22px; text-align:center; font-size:11px; color
           <label for="urlInput">Media URL</label>
           <input type="url" id="urlInput" placeholder="https://example.com/clip.mp4">
         </div>
+        
+        <!-- YouTube format selector (only shown for YouTube URLs) -->
+        <div class="field hidden" id="youtubeFormatField">
+          <label>Download format</label>
+          <button class="btn secondary small" id="fetchFormatsBtn" type="button">Fetch available formats</button>
+          <div id="formatSelector" class="format-selector hidden">
+            <div class="format-list" id="formatList"></div>
+          </div>
+        </div>
+        
         <div><button class="btn" id="loadBtn">Load file</button></div>
+        
+        <!-- Media info panel -->
+        <div id="mediaInfoPanel" class="media-info-panel hidden">
+          <div class="info-title">Media Information</div>
+          <div class="info-grid" id="mediaInfoGrid"></div>
+        </div>
       </div>
 
       <!-- TAB 2: preview and cut -->
@@ -1071,7 +1224,7 @@ footer{flex:0 0 auto; padding:9px 22px; text-align:center; font-size:11px; color
 <div class="toast" id="toast"></div>
 
 <script>
-const state = { kind:null, duration:0, chunks:[], segments:[] };
+const state = { kind:null, duration:0, chunks:[], segments:[], selectedFormat:null, youtubeFormats:[] };
 
 // ---------- utils ----------
 function toast(msg){
@@ -1091,6 +1244,17 @@ function parseTs(str){
   const m = str.trim().match(/^(\d+):(\d+(?:\.\d+)?)$/);
   if(!m) return null;
   return parseInt(m[1],10)*60 + parseFloat(m[2]);
+}
+function formatBytes(bytes){
+  if (!bytes) return 'N/A';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let unitIndex = 0;
+  let size = bytes;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+  return `${size.toFixed(1)} ${units[unitIndex]}`;
 }
 async function api(url, opts){
   const res = await fetch(url, opts);
@@ -1121,9 +1285,17 @@ const modeUpload = document.getElementById('modeUpload');
 const modeUrl = document.getElementById('modeUrl');
 const uploadField = document.getElementById('uploadField');
 const urlField = document.getElementById('urlField');
+const youtubeFormatField = document.getElementById('youtubeFormatField');
+const formatSelector = document.getElementById('formatSelector');
+const formatList = document.getElementById('formatList');
+const fetchFormatsBtn = document.getElementById('fetchFormatsBtn');
+const mediaInfoPanel = document.getElementById('mediaInfoPanel');
+const mediaInfoGrid = document.getElementById('mediaInfoGrid');
+
 modeUpload.addEventListener('click', ()=>{
   modeUpload.classList.add('active'); modeUrl.classList.remove('active');
   uploadField.classList.remove('hidden'); urlField.classList.add('hidden');
+  youtubeFormatField.classList.add('hidden');
   document.getElementById('loadBtn').textContent = 'Load file';
 });
 modeUrl.addEventListener('click', ()=>{
@@ -1132,12 +1304,152 @@ modeUrl.addEventListener('click', ()=>{
   document.getElementById('loadBtn').textContent = 'Load from URL';
 });
 
+// Check if URL is YouTube when typing
+document.getElementById('urlInput').addEventListener('input', ()=>{
+  const url = document.getElementById('urlInput').value.trim();
+  const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
+  
+  if (modeUrl.classList.contains('active') && isYoutube) {
+    youtubeFormatField.classList.remove('hidden');
+    formatSelector.classList.add('hidden');
+    state.selectedFormat = null;
+    state.youtubeFormats = [];
+  } else {
+    youtubeFormatField.classList.add('hidden');
+  }
+});
+
+// Fetch YouTube formats
+fetchFormatsBtn.addEventListener('click', async ()=>{
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) {
+    toast('Enter a YouTube URL first.');
+    return;
+  }
+  
+  fetchFormatsBtn.disabled = true;
+  fetchFormatsBtn.innerHTML = '<span class="spinner"></span> Fetching…';
+  
+  try {
+    const data = await api('/api/youtube/formats', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url}),
+    });
+    
+    state.youtubeFormats = data.formats;
+    renderFormatList(data.formats);
+    formatSelector.classList.remove('hidden');
+  } catch(e) {
+    toast(e.message);
+  } finally {
+    fetchFormatsBtn.disabled = false;
+    fetchFormatsBtn.textContent = 'Fetch available formats';
+  }
+});
+
+function renderFormatList(formats){
+  formatList.innerHTML = '';
+  
+  if (!formats || formats.length === 0) {
+    formatList.innerHTML = '<div class="empty-note">No formats available.</div>';
+    return;
+  }
+  
+  // Filter to show only formats with video or audio, and reasonable quality
+  const filtered = formats.filter(f => {
+    return (f.vcodec !== 'none' || f.acodec !== 'none') && 
+           (f.ext === 'mp4' || f.ext === 'webm' || f.ext === 'm4a' || f.ext === 'opus');
+  });
+  
+  // Sort by quality (best first)
+  const sorted = filtered.sort((a, b) => {
+    const qualityRank = {best: 0, high: 1, medium: 2, low: 3, worst: 4};
+    return (qualityRank[a.quality] || 5) - (qualityRank[b.quality] || 5);
+  });
+  
+  sorted.slice(0, 20).forEach(f => {
+    const label = document.createElement('label');
+    label.className = 'format-item';
+    
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'ytFormat';
+    radio.value = f.format_id;
+    radio.addEventListener('change', ()=>{
+      state.selectedFormat = f.format_id;
+      // Update visual selection
+      document.querySelectorAll('.format-item').forEach(item => item.classList.remove('selected'));
+      label.classList.add('selected');
+    });
+    
+    const formatLabel = document.createElement('span');
+    formatLabel.className = 'format-label';
+    const sizeInfo = f.filesize ? formatBytes(f.filesize) : (f.filesize_approx ? `~${formatBytes(f.filesize_approx)}` : 'N/A');
+    formatLabel.textContent = `${f.ext.toUpperCase()} - ${f.resolution}${f.fps ? ` @ ${f.fps}fps` : ''} - ${sizeInfo}`;
+    
+    const formatMeta = document.createElement('span');
+    formatMeta.className = 'format-meta';
+    const parts = [];
+    if (f.vcodec !== 'none') parts.push(`video: ${f.vcodec}`);
+    if (f.acodec !== 'none') parts.push(`audio: ${f.acodec}`);
+    if (f.format_note) parts.push(f.format_note);
+    formatMeta.textContent = parts.join(' | ');
+    
+    label.appendChild(radio);
+    label.appendChild(formatLabel);
+    label.appendChild(formatMeta);
+    formatList.appendChild(label);
+  });
+}
+
+// Display media info
+function displayMediaInfo(data){
+  mediaInfoPanel.classList.remove('hidden');
+  mediaInfoGrid.innerHTML = '';
+  
+  const items = [];
+  
+  // File info
+  items.push({label: 'Type', value: data.kind === 'video' ? 'Video' : 'Audio'});
+  items.push({label: 'Duration', value: fmtTs(data.duration)});
+  items.push({label: 'File size', value: formatBytes(data.file_size)});
+  items.push({label: 'Format', value: data.format || 'N/A'});
+  
+  // Video info
+  if (data.video_info) {
+    items.push({label: 'Video codec', value: data.video_info.codec || 'N/A'});
+    items.push({label: 'Resolution', value: data.video_info.width ? `${data.video_info.width}x${data.video_info.height}` : 'N/A'});
+    items.push({label: 'Frame rate', value: data.video_info.fps || 'N/A'});
+    items.push({label: 'Video bitrate', value: data.video_info.bitrate ? formatBytes(data.video_info.bitrate) + '/s' : 'N/A'});
+  }
+  
+  // Audio info
+  if (data.audio_info) {
+    items.push({label: 'Audio codec', value: data.audio_info.codec || 'N/A'});
+    items.push({label: 'Sample rate', value: data.audio_info.sample_rate ? `${data.audio_info.sample_rate} Hz` : 'N/A'});
+    items.push({label: 'Channels', value: data.audio_info.channels || 'N/A'});
+    items.push({label: 'Audio bitrate', value: data.audio_info.bitrate ? formatBytes(data.audio_info.bitrate) + '/s' : 'N/A'});
+  }
+  
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'info-item';
+    div.innerHTML = `
+      <span class="info-label">${item.label}</span>
+      <span class="info-value">${item.value}</span>
+    `;
+    mediaInfoGrid.appendChild(div);
+  });
+}
+
 const previewWrap = document.getElementById('previewWrap');
 let mediaEl = document.getElementById('videoPreview');
 
 document.getElementById('loadBtn').addEventListener('click', async ()=>{
   const btn = document.getElementById('loadBtn');
   const fd = new FormData();
+  
   if(modeUpload.classList.contains('active')){
     const f = document.getElementById('fileInput').files[0];
     if(!f){ toast('Choose a file first.'); return; }
@@ -1146,14 +1458,25 @@ document.getElementById('loadBtn').addEventListener('click', async ()=>{
     const u = document.getElementById('urlInput').value.trim();
     if(!u){ toast('Enter a URL first.'); return; }
     fd.append('url', u);
+    
+    // Add format option if YouTube and selected
+    if (state.selectedFormat && (u.includes('youtube.com') || u.includes('youtu.be'))) {
+      fd.append('format_option', state.selectedFormat);
+    }
   }
+  
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Loading…';
   try{
     const data = await api('/api/load', {method:'POST', body: fd});
-    state.kind = data.kind; state.duration = data.duration; state.chunks = [];
+    state.kind = data.kind; 
+    state.duration = data.duration; 
+    state.chunks = [];
+    state.selectedFormat = null;
+    
     setupPreviewElement(data.kind, data.src);
     resetCutUI();
     renderChunkList();
+    displayMediaInfo(data);
     unlockTabs();
     goTab('cut');
   }catch(e){ toast(e.message); }
