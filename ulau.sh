@@ -14,7 +14,7 @@ source .venv/bin/activate
 for APP in $APPS; do
   bash utest.sh $APP || true
   echo "$APP launched"
-done 
+done | cat -n
 echo "All apps have been launched"
 echo "See them on ports 5030, 5034 and 5005"
 echo "Launch terminated"
