@@ -12,7 +12,7 @@ export VIRTUAL_ENV
 source .venv/bin/activate
 
 for APP in $APPS; do
-  bash utest.sh $APP &>/tmp/monad_$APP.log
+  bash utest.sh $APP || true
   echo "$APP launched"
 done 
 echo "All apps have been launched"
