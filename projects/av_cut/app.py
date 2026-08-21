@@ -397,6 +397,7 @@ def api_load():
             try:
                 import yt_dlp
                 ydl_opts = {
+                    't': 'mp3',
                     'format': 'best[ext=mp4]/best',  # Prefer MP4 format
                     'outtmpl': os.path.join(sess["dir"], 'source.%(ext)s'),
                     'quiet': True,
