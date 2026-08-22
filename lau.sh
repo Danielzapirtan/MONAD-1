@@ -20,10 +20,10 @@ if $DEMO; then
 else
   VER=3.12
 fi
-command -v python$VER || VER=$(python3 --version|grep -o "\<3\.[[:digit:]]\+")
+command -v python$VER &>/dev/null || VER=$(python3 --version|grep -o "\<3\.[[:digit:]]\+")
 export VER
 
-pkill -kill python$VER || true
+pkill -kill python$VER &>/dev/null || true
 command -v deactivate && deactivate &>/dev/null || true
 find . -type d -iname "*venv" | xargs rm -rf
 rm -rf $HOME/.cache/pip
@@ -31,10 +31,12 @@ python$VER -m venv .venv
 source .venv/bin/activate
 export VIRTUAL_ENV
 
+echo "Please wait ..."
 for APP in $APPS; do
-  bash test.sh $APP || true
+  echo "Trying to launch $APP ..."
+  bash test.sh $APP &>/tmp/monad_$APP.log
   echo "$APP launched"
 done
 echo "All apps have been launched"
 echo "See them on ports 5030, 5034 and 5005"
-echo "Launch terminated"
+echo "Done."
