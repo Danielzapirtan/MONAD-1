@@ -1,13 +1,13 @@
 #! /bin/bash
 
 APPS="$(ls projects)"
-VER=3.14
 
-pkill -kill python$VER
+sudo apt install python-is-python3
+pkill -kill python python3.13
 deactivate &>/dev/null || true
 find . -type d -iname "*venv" | xargs rm -rf
 rm -rf $HOME/.cache/pip
-python$VER -m venv .venv
+python -m venv .venv
 export VIRTUAL_ENV
 source .venv/bin/activate
 
