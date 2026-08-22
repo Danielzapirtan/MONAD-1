@@ -11,13 +11,39 @@ test -n "$VER"
 cd ./projects/$APP
 
 if $DEMO; then
-  sudo apt install -y ffmpeg
+  if sudo apt install -y ffmpeg; then
+    echo -n "1 "
+  else
+    echo ""
+    echo "Failed to install ffmpeg."
+    false
+  fi
 else
-  brew install ffmpeg
+  if brew install ffmpeg; then
+     echo -n "1 "
+   else
+    echo ""
+    echo "Failed to install ffmpeg."
+     false
+   fi
 fi
 
-pip install -r requirements.txt
-$DEMO || pip install whispermlx
+if pip install -r requirements.txt; then
+  echo -n "2 "
+else
+  echo ""
+  echo "Failed to install python requirements"
+  false
+fi
+
+if ! $DEMO; then
+  if pip install whispermlx; then
+    echo -n "3 "
+  else
+    echo ""
+    echo "Failed to install whispermlx"
+  fi
+fi
 
 if ! python$VER app.py; then
   false
