@@ -2,9 +2,19 @@
 
 APPS="$(ls projects)"
 
+brew update || true
+brew install python-is-python3 || true
+pkill -kill python
 pkill -kill python3.12
+deactivate &>/dev/null || true
+find . -type d -iname "*venv" | xargs rm -rf
+rm -rf $HOME/.cache/pip
+python -m venv .venv
+export VIRTUAL_ENV
+source .venv/bin/activate
+
 for APP in $APPS; do
-  bash test.sh $APP &>/tmp/monad_$APP.log
+  bash utest.sh $APP || true
   echo "$APP launched"
 done
 echo "All apps have been launched"

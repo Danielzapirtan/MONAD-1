@@ -2,11 +2,19 @@
 
 APPS="$(ls projects)"
 
-pkill -kill python3.14
+sudo apt install python-is-python3 || true
+pkill -kill python || true
+deactivate &>/dev/null || true
+find . -type d -iname "*venv" | xargs rm -rf
+rm -rf $HOME/.cache/pip
+python -m venv .venv
+export VIRTUAL_ENV
+source .venv/bin/activate
+
 for APP in $APPS; do
-  bash utest.sh $APP &>/tmp/monad_$APP.log
+  bash utest.sh $APP || true
   echo "$APP launched"
-done 
+done
 echo "All apps have been launched"
 echo "See them on ports 5030, 5034 and 5005"
 echo "Launch terminated"
