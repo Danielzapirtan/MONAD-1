@@ -30,8 +30,8 @@ else
   VER=3.12
 fi
 command -v python$VER &>/dev/null || VER=$(python3 --version|grep -o "\<3\.[[:digit:]]\+")
-echo "Using python$VER"
 test -n "$VER"
+echo "Using python$VER"
 export VER
 
 echo -n "Trying to set up the virtual environment ... "
