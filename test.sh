@@ -1,12 +1,16 @@
 #! /usr/bin/env bash
 
 APP="$1"
-VER=3.12
 
 cd ./projects/$APP
 
-command -v brew && brew install ffmpeg
+if $DEMO; then
+  sudo apt install -y ffmpeg
+else
+  brew install ffmpeg
+fi
+
 pip install -r requirements.txt
-pip install whispermlx
+$DEMO || pip install whispermlx
 
 python$VER app.py &

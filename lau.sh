@@ -1,7 +1,19 @@
 #! /bin/bash
 
 APPS="$(ls projects)"
-VER=3.12
+ARCH=$(uname)
+if echo $ARCH | grep -q "^Linux$"; then
+  DEMO=true
+else
+  DEMO=false
+fi
+
+if $DEMO; then
+  VER=3.14
+else
+  VER=3.12
+fi
+export DEMO VER
 
 pkill -kill python$VER
 deactivate &>/dev/null || true
