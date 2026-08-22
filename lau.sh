@@ -39,7 +39,7 @@ echo "Please wait ..."
 for APP in $APPS; do
   LOG=/tmp/monad_$APP.log
   echo -n "Trying to launch $APP ... "
-  bash test.sh $APP &>$LOG || echo "Error log:" && tail -n 20 $LOG && false
+  bash test.sh $APP &>$LOG || echo "" && echo "Error log:" && tail -n 20 $LOG && false
   echo "Ok"
 done
 echo "All apps have been launched"
