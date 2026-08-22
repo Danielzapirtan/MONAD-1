@@ -34,7 +34,7 @@ export VIRTUAL_ENV
 echo "Please wait ..."
 for APP in $APPS; do
   LOG=/tmp/monad_$APP.log
-  echo -n "Trying to launch $APP ..."
+  echo -n "Trying to launch $APP ... "
   bash test.sh $APP &>$LOG || echo "" && tail -n 20 $LOG && false
   echo "Ok"
 done
