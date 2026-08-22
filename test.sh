@@ -11,8 +11,8 @@ test -n "$VER"
 
 cd ./projects/$APP
 
+LOG=/tmp/ffmpeg_$SECRET.log
 if $DEMO; then
-  LOG=/tmp/ffmpeg_$SECRET.log
   if sudo apt install -y ffmpeg &>$LOG; then
     echo ""
     echo "Successfully installed ffmpeg"
@@ -23,7 +23,6 @@ if $DEMO; then
     false
   fi
 else
-  LOG=/tmp/ffmpeg_$SECRET.log
   if brew install ffmpeg &>$LOG; then
     echo ""
     echo "Successfully installed ffmpeg"
