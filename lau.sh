@@ -34,9 +34,9 @@ export VIRTUAL_ENV
 echo "Please wait ..."
 for APP in $APPS; do
   LOG=/tmp/monad_$APP.log
-  echo "Trying to launch $APP ..."
-  bash test.sh $APP &>$LOG || tail -n 20 $LOG && false
-  echo "$APP launched"
+  echo -n "Trying to launch $APP ..."
+  bash test.sh $APP &>$LOG || echo "" && tail -n 20 $LOG && false
+  echo "Ok"
 done
 echo "All apps have been launched"
 echo "See them on ports 5030, 5034 and 5005"
