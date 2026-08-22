@@ -4,6 +4,10 @@ set -e
 
 APP="$1"
 
+test -n $APP
+test -n $DEMO
+test -n $VER
+
 cd ./projects/$APP
 
 if $DEMO; then
