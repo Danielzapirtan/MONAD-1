@@ -22,10 +22,8 @@ if $DEMO; then
   fi
 else
   if brew install ffmpeg &>$LOG; then
-    echo ""
     echo "Successfully installed ffmpeg"
   else
-    echo ""
     echo "Failed to install ffmpeg."
     tail $LOG
     false
