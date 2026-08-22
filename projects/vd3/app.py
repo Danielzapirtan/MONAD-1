@@ -96,7 +96,7 @@ def get_video_info(video_url, cookies=None):
                 format_info = {
                     'format_id': fmt.get('format_id', ''),
                     'ext': fmt.get('ext', ''),
-                    'resolution': fmt.get('resolution', 'audio only') if fmt.get('height') else 'audio only',
+                    'resolution': fmt.get('resolution', 'maybe audio only') if fmt.get('height') else 'audio only',
                     'filesize': fmt.get('filesize', 0),
                     'format_note': fmt.get('format_note', ''),
                     'vcodec': fmt.get('vcodec', 'none'),
