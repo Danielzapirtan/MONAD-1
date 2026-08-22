@@ -3,6 +3,7 @@
 set -e
 
 APPS="$(ls projects)"
+export SECRET="$(date +%s)_7919"
 test -n "$APPS"
 if command -v uname &>/dev/null; then
   echo "$(uname) detected"
@@ -42,7 +43,7 @@ echo "Ok"
 echo "Please wait ..."
 for APP in $APPS; do
   test -n "$APP"
-  LOG=/tmp/monad_7919_$APP.log
+  LOG=/tmp/monad_${SECRET}_$APP.log
   test -n "$LOG"
   echo -n "Trying to launch $APP ... "
   if bash test.sh $APP &>$LOG; then

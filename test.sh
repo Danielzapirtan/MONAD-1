@@ -6,45 +6,56 @@ APP="$1"
 
 test -n "$APP"
 test -n "$DEMO"
+test -n "$SECRET"
 test -n "$VER"
 
 cd ./projects/$APP
 
 if $DEMO; then
-  if sudo apt install -y ffmpeg; then
-    echo -n "1 "
+  LOG=/tmp/ffmpeg_$SECRET.log
+  if sudo apt install -y ffmpeg &>$LOG; then
+    echo "Successfully installed ffmpeg"
   else
     echo ""
     echo "Failed to install ffmpeg."
+    tail $LOG
     false
   fi
 else
-  if brew install ffmpeg; then
-     echo -n "1 "
-   else
+  LOG=/tmp/ffmpeg_$SECRET.log
+  if brew install ffmpeg &>$LOG; then
+    echo "Successfully installed ffmpeg"
+  else
     echo ""
     echo "Failed to install ffmpeg."
-     false
-   fi
+    tail $LOG
+    false
+  fi
 fi
 
-if pip install -r requirements.txt; then
-  echo -n "2 "
+LOG=/tmp/requirements_$SECRET.log
+if pip install -r requirements.txt &>$LOG; then
+  echo "Successfully installed requirements"
 else
   echo ""
   echo "Failed to install python requirements"
+  tail $LOG
   false
 fi
 
 if ! $DEMO; then
-  if pip install whispermlx; then
-    echo -n "3 "
+  if pip install whispermlx &>$LOG; then
+    echo "Successfully installed whispermlx"
   else
     echo ""
     echo "Failed to install whispermlx"
+    tail $LOG
+    false
   fi
 fi
 
-if ! python$VER app.py; then
+LOG=/tmp/app_$SECRET.log
+if ! python$VER app.py &>$LOG; then
+  
   false
 fi &
