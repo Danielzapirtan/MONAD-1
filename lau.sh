@@ -37,7 +37,7 @@ echo "Ok"
 
 echo "Please wait ..."
 for APP in $APPS; do
-  LOG=/tmp/monad_$APP.log
+  LOG=/tmp/monad_7919_$APP.log
   echo -n "Trying to launch $APP ... "
   if bash test.sh $APP &>$LOG; then
   	echo "Ok"
