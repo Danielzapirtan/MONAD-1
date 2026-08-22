@@ -3,7 +3,7 @@
 APPS="$(ls projects)"
 VER=3.12
 
-pkill -kill python3.12
+pkill -kill python$VER
 deactivate &>/dev/null || true
 find . -type d -iname "*venv" | xargs rm -rf
 rm -rf $HOME/.cache/pip
