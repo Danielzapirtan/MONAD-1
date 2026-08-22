@@ -6,6 +6,7 @@ APPS="$(ls projects)"
 CODE="7919"
 rm -rf /tmp/*$CODE*.log
 export SECRET="$(date +%s)_$CODE"
+
 test -n "$APPS"
 if command -v uname &>/dev/null; then
   echo "$(uname) detected"
