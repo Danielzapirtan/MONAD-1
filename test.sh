@@ -25,6 +25,7 @@ if $DEMO; then
 else
   LOG=/tmp/ffmpeg_$SECRET.log
   if brew install ffmpeg &>$LOG; then
+    echo ""
     echo "Successfully installed ffmpeg"
   else
     echo ""
