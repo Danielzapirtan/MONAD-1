@@ -1,27 +1,33 @@
 #! /bin/bash
 
+set -e
+
 APPS="$(ls projects)"
-ARCH=$(uname)
-if echo $ARCH | grep -q "^Linux$"; then
-  DEMO=true
+if command -v uname; then
+  if uname | grep -q "^Linux$"; then
+    DEMO=true
+  else
+    DEMO=false
+  fi
 else
   DEMO=false
 fi
+export DEMO
 
 if $DEMO; then
   VER=3.14
 else
   VER=3.12
 fi
-export DEMO VER
+export VER
 
 pkill -kill python$VER
-deactivate &>/dev/null || true
+command -v deactivate && deactivate &>/dev/null || true
 find . -type d -iname "*venv" | xargs rm -rf
 rm -rf $HOME/.cache/pip
 python$VER -m venv .venv
-export VIRTUAL_ENV
 source .venv/bin/activate
+export VIRTUAL_ENV
 
 for APP in $APPS; do
   bash test.sh $APP || true
