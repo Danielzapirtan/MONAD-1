@@ -25,7 +25,7 @@ command -v python$VER &>/dev/null || VER=$(python3 --version|grep -o "\<3\.[[:di
 echo "Using python$VER"
 export VER
 
-echo -n "Trying to setup the virtual environment ... "
+echo -n "Trying to set up the virtual environment ... "
 pkill -kill python$VER &>/dev/null || true
 command -v deactivate && deactivate &>/dev/null || true
 find . -type d -iname "*venv" | xargs rm -rf
