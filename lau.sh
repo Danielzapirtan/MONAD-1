@@ -4,6 +4,7 @@ set -e
 
 APPS="$(ls projects)"
 if command -v uname &>/dev/null; then
+  echo "$(uname) detected"
   if uname | grep -q "^Linux$"; then
     DEMO=true
   else
@@ -21,15 +22,18 @@ else
   VER=3.12
 fi
 command -v python$VER &>/dev/null || VER=$(python3 --version|grep -o "\<3\.[[:digit:]]\+")
+echo "Using python$VER"
 export VER
 
 pkill -kill python$VER &>/dev/null || true
+echo -n "Trying to setup the virtual environment ... "
 command -v deactivate && deactivate &>/dev/null || true
 find . -type d -iname "*venv" | xargs rm -rf
 rm -rf $HOME/.cache/pip
 python$VER -m venv .venv
 source .venv/bin/activate
 export VIRTUAL_ENV
+echo "Ok"
 
 echo "Please wait ..."
 for APP in $APPS; do
