@@ -16,7 +16,7 @@ export DEMO
 
 if $DEMO; then
   VER=3.13
-  command -v python$VER || VER=3.14
+  command -v python$VER &>/dev/null || VER=3.14
 else
   VER=3.12
 fi
