@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#! /bin/bash
 
 set -e
 
@@ -56,6 +56,6 @@ fi
 
 LOG=/tmp/app_$SECRET.log
 if ! python$VER app.py &>$LOG; then
-  
+  cat $LOG
   false
 fi &
