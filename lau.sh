@@ -4,10 +4,12 @@ set -e
 
 APPS="$(ls projects)"
 CODE="7919"
+test -n "$CODE"
 rm -rf /tmp/*$CODE*.log
 export SECRET="$(date +%s)_$CODE"
-
 test -n "$APPS"
+test -n "$SECRET"
+
 if command -v uname &>/dev/null; then
   echo "$(uname) detected"
   if uname | grep -q "^Linux$"; then
