@@ -1,10 +1,8 @@
 #! /bin/bash
 
 APPS="$(ls projects)"
+VER=3.12
 
-brew update || true
-brew install python-is-python3 || true
-pkill -kill python
 pkill -kill python3.12
 deactivate &>/dev/null || true
 find . -type d -iname "*venv" | xargs rm -rf
@@ -14,7 +12,7 @@ export VIRTUAL_ENV
 source .venv/bin/activate
 
 for APP in $APPS; do
-  bash utest.sh $APP || true
+  bash test.sh $APP || true
   echo "$APP launched"
 done
 echo "All apps have been launched"
