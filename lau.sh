@@ -3,7 +3,7 @@
 set -e
 
 APPS="$(ls projects)"
-if command -v uname; then
+if command -v uname &>/dev/null; then
   if uname | grep -q "^Linux$"; then
     DEMO=true
   else
@@ -21,7 +21,7 @@ else
 fi
 export VER
 
-pkill -kill python$VER
+pkill -kill python$VER || true
 command -v deactivate && deactivate &>/dev/null || true
 find . -type d -iname "*venv" | xargs rm -rf
 rm -rf $HOME/.cache/pip
