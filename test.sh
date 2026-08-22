@@ -5,7 +5,7 @@ VER=3.12
 
 cd ./projects/$APP
 
-brew install ffmpeg
+command -v brew && brew install ffmpeg
 pip install -r requirements.txt
 pip install whispermlx
 
