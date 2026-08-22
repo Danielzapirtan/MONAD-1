@@ -39,8 +39,13 @@ echo "Please wait ..."
 for APP in $APPS; do
   LOG=/tmp/monad_$APP.log
   echo -n "Trying to launch $APP ... "
-  bash test.sh $APP &>$LOG || echo "" && echo "Error log:" && tail -n 20 $LOG && false
-  echo "Ok"
+  if bash test.sh $APP &>$LOG; then
+  	echo "Ok"
+  else
+	echo ""
+	echo "Error log:"
+	tail -n 20 $LOG
+  fi
 done
 echo "All apps have been launched"
 echo "See them on ports 5030, 5034 and 5005"
