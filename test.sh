@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 
+set -e
+
 APP="$1"
 
 cd ./projects/$APP
@@ -13,4 +15,6 @@ fi
 pip install -r requirements.txt
 $DEMO || pip install whispermlx
 
-python$VER app.py &
+if ! python$VER app.py; then
+  false
+fi &
