@@ -14,6 +14,7 @@ cd ./projects/$APP
 if $DEMO; then
   LOG=/tmp/ffmpeg_$SECRET.log
   if sudo apt install -y ffmpeg &>$LOG; then
+    echo ""
     echo "Successfully installed ffmpeg"
   else
     echo ""
@@ -35,6 +36,7 @@ fi
 
 LOG=/tmp/requirements_$SECRET.log
 if pip install -r requirements.txt &>$LOG; then
+  echo ""
   echo "Successfully installed requirements"
 else
   echo ""
@@ -45,6 +47,7 @@ fi
 
 if ! $DEMO; then
   if pip install whispermlx &>$LOG; then
+    echo ""
     echo "Successfully installed whispermlx"
   else
     echo ""
