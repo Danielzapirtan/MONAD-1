@@ -45,6 +45,7 @@ for APP in $APPS; do
 	echo ""
 	echo "Error log:"
 	tail -n 20 $LOG
+	false
   fi
 done
 echo "All apps have been launched"
