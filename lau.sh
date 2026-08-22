@@ -15,7 +15,7 @@ fi
 export DEMO
 
 if $DEMO; then
-  VER=3.14
+  VER=3.13
 else
   VER=3.12
 fi
