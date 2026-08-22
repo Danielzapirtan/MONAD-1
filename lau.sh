@@ -20,7 +20,7 @@ if $DEMO; then
 else
   VER=3.12
 fi
-command -v python$VER || VER=3
+command -v python$VER || VER=$(python3 --version|grep -o "\<3\.[[:digit:]]\+")
 export VER
 
 pkill -kill python$VER || true
