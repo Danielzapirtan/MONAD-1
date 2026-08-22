@@ -7,7 +7,7 @@ pkill -kill python$VER
 deactivate &>/dev/null || true
 find . -type d -iname "*venv" | xargs rm -rf
 rm -rf $HOME/.cache/pip
-python -m venv .venv
+python$VER -m venv .venv
 export VIRTUAL_ENV
 source .venv/bin/activate
 
