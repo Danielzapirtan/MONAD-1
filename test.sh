@@ -56,6 +56,11 @@ fi
 
 LOG=/tmp/app_$SECRET.log
 if ! python$VER app.py &>$LOG; then
-  cat $LOG
+  echo ""
+  echo "Failed to launch $APP"
+  tail $LOG
   false
+else
+  echo ""
+  echo "Successfully launch $APP"
 fi &
