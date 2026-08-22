@@ -3,6 +3,7 @@
 set -e
 
 APPS="$(ls projects)"
+test -n $APPS
 if command -v uname &>/dev/null; then
   echo "$(uname) detected"
   if uname | grep -q "^Linux$"; then
@@ -13,6 +14,7 @@ if command -v uname &>/dev/null; then
 else
   DEMO=false
 fi
+test -n $DEMO
 export DEMO
 
 if $DEMO; then
@@ -23,6 +25,7 @@ else
 fi
 command -v python$VER &>/dev/null || VER=$(python3 --version|grep -o "\<3\.[[:digit:]]\+")
 echo "Using python$VER"
+test -n $VER
 export VER
 
 echo -n "Trying to set up the virtual environment ... "
@@ -32,12 +35,15 @@ find . -type d -iname "*venv" | xargs rm -rf
 rm -rf $HOME/.cache/pip
 python$VER -m venv .venv
 source .venv/bin/activate
+test -n $VIRTUAL_ENV
 export VIRTUAL_ENV
 echo "Ok"
 
 echo "Please wait ..."
 for APP in $APPS; do
+  test -n $APP
   LOG=/tmp/monad_7919_$APP.log
+  test -n $LOG
   echo -n "Trying to launch $APP ... "
   if bash test.sh $APP &>$LOG; then
   	echo "Ok"
