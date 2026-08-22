@@ -46,6 +46,7 @@ else
   false
 fi
 
+LOG=/tmp/whispermlx_$SECRET.log
 if ! $DEMO; then
   if pip install whispermlx &>$LOG; then
     echo ""
