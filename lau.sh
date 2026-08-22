@@ -3,11 +3,11 @@
 set -e
 
 APPS="$(ls projects)"
+test -n "$APPS"
 CODE="7919"
 test -n "$CODE"
 rm -rf /tmp/*$CODE*.log
 export SECRET="$(date +%s)_$CODE"
-test -n "$APPS"
 test -n "$SECRET"
 
 if command -v uname &>/dev/null; then
