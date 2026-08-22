@@ -14,10 +14,8 @@ cd ./projects/$APP
 LOG=/tmp/ffmpeg_$SECRET.log
 if $DEMO; then
   if sudo apt install -y ffmpeg &>$LOG; then
-    echo ""
     echo "Successfully installed ffmpeg"
   else
-    echo ""
     echo "Failed to install ffmpeg."
     tail $LOG
     false
