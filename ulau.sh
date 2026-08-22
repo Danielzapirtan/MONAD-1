@@ -3,7 +3,7 @@
 APPS="$(ls projects)"
 
 sudo apt install python-is-python3
-pkill -kill python python3.13
+pkill -kill python
 deactivate &>/dev/null || true
 find . -type d -iname "*venv" | xargs rm -rf
 rm -rf $HOME/.cache/pip
