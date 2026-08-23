@@ -190,4 +190,4 @@ def api_download(media_id):
 
 if __name__ == "__main__":
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"
-    app.run(host="127.0.0.1", port=5020, debug=debug)
+    app.run(host="127.0.0.1", port=5005, debug=debug)
