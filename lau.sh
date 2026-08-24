@@ -25,7 +25,10 @@ export DEMO
 
 if $DEMO; then
   VER=3.13
-  command -v python$VER &>/dev/null || VER=3.14
+  ARCH=$(uname -m)
+  if echo $ARCH|grep -q "^aarch64$"; then
+    VER=3.14
+  fi
 else
   VER=3.12
 fi
