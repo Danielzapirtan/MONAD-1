@@ -1,15 +1,3 @@
-"""
-Media Editor — Flask app
-Load media (upload or URL) -> preview & cut chunks with ffmpeg -> transcribe
-(openai-whisper / faster-whisper / whispermlx) with optional speaker
-diarization (pyannote.audio or an LLM-based heuristic via Claude/Gemini) ->
-download the transcript and/or a zip of everything.
-
-Run:
-    pip install -r requirements.txt
-    python app.py
-"""
-
 import io
 import json
 import os
@@ -23,12 +11,21 @@ from uuid import uuid4
 
 import requests
 from flask import (
-    Flask, request, session, jsonify, send_file, abort, render_template_string
+    Flask, request, session, jsonify, send_file, abort, render_template_string, 
+    make_response
 )
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("MEDIA_EDITOR_SECRET", os.urandom(32))
+
+# Fix 1: Configure session to work better across browsers
+app.config.update(
+    SESSION_COOKIE_SECURE=False,  # Allow HTTP (for local dev)
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',  # Better cross-origin handling
+    PERMANENT_SESSION_LIFETIME=3600,  # 1 hour
+)
 
 BASE_DIR = os.path.join(tempfile.gettempdir(), "media_editor_sessions")
 os.makedirs(BASE_DIR, exist_ok=True)
@@ -49,6 +46,7 @@ def ensure_sid():
     if not sid:
         sid = uuid4().hex
         session["sid"] = sid
+        session.permanent = True
     return sid
 
 
@@ -393,12 +391,26 @@ def index():
     return render_template_string(INDEX_HTML)
 
 
+# Fix 2: Serve media with proper caching headers for Chrome/Safari
 @app.route("/media/<sid>/source")
 def media_source(sid):
     sess = SESSIONS.get(sid)
     if not sess or not sess.get("source"):
         abort(404)
-    return send_file(sess["source"]["path"], conditional=True)
+    
+    response = make_response(send_file(
+        sess["source"]["path"],
+        conditional=True,
+        mimetype='video/mp4' if sess["source"].get("kind") == "video" else 'audio/mp4'
+    ))
+    
+    # Fix 3: Add headers to prevent caching issues in Chrome/Safari
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    response.headers['Accept-Ranges'] = 'bytes'
+    
+    return response
 
 
 # --------------------------------------------------------------------------
