@@ -50,6 +50,7 @@ if ! $DEMO; then
   fi
 fi
 
+if false; then
 LOG=/tmp/app_$SECRET.log
 if ! python$VER app.py &>$LOG; then
   echo "Failed to launch $APP"
@@ -58,3 +59,4 @@ if ! python$VER app.py &>$LOG; then
 else
   echo "Successfully launch $APP"
 fi &
+fi
