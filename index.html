@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  .preview-container {
+    width: 100%;
+    height: 600px;
+    border: 2px solid #ccc;
+    margin-top: 20px;
+    position: relative;
+    background: #fafafa;
+  }
+  .preview-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+  .loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 18px;
+    color: #666;
+  }
+  .link-list a {
+    display: inline-block;
+    margin: 5px 10px;
+    padding: 10px 20px;
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .link-list a:hover {
+    background: #5a6268;
+  }
+  .link-list a.active {
+    background: #007bff;
+  }
+</style>
+</head>
+<body>
+
+<div class="link-list" id="linkList">
+  <a data-url="https://example.com">Example</a>
+  <a data-url="https://wikipedia.org">Wikipedia</a>
+  <a data-url="https://github.com">GitHub</a>
+</div>
+
+<div class="preview-container">
+  <div class="loading">Loading...</div>
+  <iframe id="previewFrame"></iframe>
+</div>
+
+<script>
+document.querySelectorAll('#linkList a').forEach(link => {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    const url = this.dataset.url;
+    
+    // Update active state
+    document.querySelectorAll('#linkList a').forEach(a => a.classList.remove('active'));
+    this.classList.add('active');
+    
+    // Show loading
+    document.querySelector('.loading').style.display = 'block';
+    document.getElementById('previewFrame').style.display = 'none';
+    
+    // Load the URL
+    const iframe = document.getElementById('previewFrame');
+    iframe.onload = function() {
+      document.querySelector('.loading').style.display = 'none';
+      iframe.style.display = 'block';
+    };
+    iframe.src = url;
+  });
+});
+</script>
+</body>
+</html>
