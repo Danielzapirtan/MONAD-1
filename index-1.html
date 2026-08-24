@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONAD-1</title>
+    <style>
+        /* Your styles */
+        .app-container {
+            display: none;
+        }
+        .app-container.active {
+            display: block;
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+        }
+        .nav-tabs a {
+            padding: 10px 20px;
+            text-decoration: none;
+            color: #333;
+            border-radius: 4px;
+        }
+        .nav-tabs a.active {
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-tabs">
+        <a href="#av_cut" class="active">AV Cut</a>
+        <a href="#bfc">BFC</a>
+        <a href="#vd3">VD3</a>
+        <a href="#pdfutils">PDF Utils</a>
+    </div>
+    
+    <div id="av_cut" class="app-container active">
+        <!-- Your av_cut content -->
+        <h1>AV Cut</h1>
+    </div>
+    
+    <div id="bfc" class="app-container">
+        <!-- Your bfc content -->
+        <h1>BFC</h1>
+    </div>
+    
+    <div id="vd3" class="app-container">
+        <!-- Your vd3 content -->
+        <h1>VD3</h1>
+    </div>
+    
+    <div id="pdfutils" class="app-container">
+        <!-- Your pdfutils content -->
+        <h1>PDF Utils</h1>
+    </div>
+    
+    <script>
+        // Router
+        function navigate(hash) {
+            // Hide all containers
+            document.querySelectorAll('.app-container').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show target container
+            const target = document.getElementById(hash) || document.getElementById('av_cut');
+            if (target) {
+                target.classList.add('active');
+            }
+            
+            // Update active nav
+            document.querySelectorAll('.nav-tabs a').forEach(el => {
+                el.classList.toggle('active', el.getAttribute('href') === `#${hash}`);
+            });
+        }
+        
+        // Handle hash changes
+        window.addEventListener('hashchange', () => {
+            const hash = window.location.hash.slice(1) || 'av_cut';
+            navigate(hash);
+        });
+        
+        // Initial load
+        const initialHash = window.location.hash.slice(1) || 'av_cut';
+        navigate(initialHash);
+    </script>
+</body>
+</html>
