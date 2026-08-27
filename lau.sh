@@ -20,7 +20,7 @@ export VER
 for PORT in "$PORTS"; do
   pids="$(lsof -i :$PORT|cut -f 2)"
   test -n "$pids" && for pid in "$pids"; do
-    test -d /proc/$pid && kill -15 $pid
+    test -n "$pid" && test -d /proc/$pid && kill -15 $pid
   done
 done
 
