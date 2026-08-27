@@ -8,14 +8,16 @@ OS="$(uname)"
 PORTS="5030 5034 5005"
 VER="3.12"
 
-echo "$OS"|grep -q "^Linux$" && VER="3.13"
+DEMO=false
+echo "$OS"|grep -q "^Linux$" && DEMO=true
 
 test -n "$APPS"
+test -n "$DEMO"
 test -n "$OS"
 test -n "$PORTS"
 test -n "$VER"
 
-export OS VER
+export DEMO VER
 
 for PORT in "$PORTS"; do
   pids="$(lsof -i :$PORT|cut -f 2)"
@@ -48,7 +50,7 @@ direct_pip() {
 
 launch_apps() {
   SCRIPT="test.sh"
-  echo "$OS"|grep -q "^Linux$" && SCRIPT="utest.sh"
+  #$DEMO && SCRIPT="utest.sh"
   for APP in $APPS; do
     test -n "$APP"
     bash "$SCRIPT" "$APP" &>/dev/null && echo "Launched $APP ok"
