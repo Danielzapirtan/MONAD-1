@@ -16,7 +16,8 @@ echo $OS|grep -q "^Linux$"
 export VER
 
 for PORT in 5030 5034 5005; do
-  for pid in $(lsof -i :$PORT|cut -f 2); do
+  pids="$(lsof -i :$PORT|cut -f 2)"
+  test -n "$pids" && for pid in "$pids"; do
     test -d /proc/$pid && kill -15 $pid
   done
 done
