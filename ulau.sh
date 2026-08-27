@@ -4,13 +4,13 @@ set -e
 
 APPS="$(ls projects)"
 OS=$(uname)
-VER=3.12
+VER=3.13
 
 test -n "$APPS"
 test -n "$OS"
 test -n "$VER"
 
-echo $OS|grep -qv "^Linux$"
+echo $OS|grep -q "^Linux$"
 
 export VER
 
