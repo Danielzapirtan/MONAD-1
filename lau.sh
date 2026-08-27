@@ -13,8 +13,7 @@ test -n "$OS"
 test -n "$PORTS"
 test -n "$VER"
 
-echo $OS|grep -qv "^Linux$"
-
+echo $OS|grep -q "^Linux$" && VER=3.13
 export VER
 
 for PORT in "$PORTS"; do
@@ -47,9 +46,11 @@ direct_pip() {
 }
 
 launch_apps() {
+  SCRIPT="test.sh"
+  echo "$OS"|grep -q "^Linux$" && SCRIPT="utest.sh"
   for APP in $APPS; do
     test -n "$APP"
-    bash utest.sh "$APP"
+    bash "$SCRIPT" "$APP"
   done
 }
 
