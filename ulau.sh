@@ -17,7 +17,7 @@ export VER
 
 for PORT in 5030 5034 5005; do
   for pid in $(lsof -i :$PORT|cut -f 2); do
-    kill -15 $pid
+    test -d /proc/$pid && kill -15 $pid
   done
 done
 
