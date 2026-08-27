@@ -4,11 +4,11 @@ set -e
 
 APPS="$(ls projects)"
 ARG="$1"
-OS=$(uname)
+OS="$(uname)"
 PORTS="5030 5034 5005"
-VER=3.12
+VER="3.12"
 
-echo "$OS"|grep -q "^Linux$" && VER=3.13
+echo "$OS"|grep -q "^Linux$" && VER="3.13"
 
 test -n "$APPS"
 test -n "$OS"
