@@ -11,7 +11,7 @@ test -n "$VER"
 
 cd ./projects/$APP
 
-LOG=/tmp/ffmpeg_$SECRET.log
+LOG=$TEMPDIR/ffmpeg.log
 if $DEMO; then
   if command -v ffmpeg &>/dev/null || sudo apt install -y ffmpeg &>$LOG; then
     echo "Successfully installed ffmpeg"
@@ -30,7 +30,7 @@ else
   fi
 fi
 
-LOG=/tmp/requirements_$SECRET.log
+LOG=$TEMPDIR/requirements.log
 if pip install -r requirements.txt &>$LOG; then
   echo "Successfully installed requirements"
 else
@@ -39,7 +39,7 @@ else
   false
 fi
 
-LOG=/tmp/whispermlx_$SECRET.log
+LOG=$TEMPDIR/whispermlx.log
 if ! $DEMO; then
   if command -v whispermlx &>/dev/null || pip install whispermlx &>$LOG; then
     echo "Successfully installed whispermlx"
@@ -50,7 +50,7 @@ if ! $DEMO; then
   fi
 fi
 
-LOG=/tmp/app_$SECRET.log
+LOG=$TEMPDIR/app.log
 if ! python$VER app.py &>$LOG; then
   echo "Failed to launch $APP"
   tail $LOG

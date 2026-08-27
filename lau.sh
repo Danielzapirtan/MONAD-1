@@ -9,6 +9,7 @@ need() {
     false
   fi
 }
+export -f need
 
 need uname
 
@@ -21,6 +22,8 @@ need mktemp
 APPS="$(ls projects)"
 test -n "$APPS"
 TEMPDIR="$(mktemp)"
+test -n "$TEMPDIR"
+export TEMPDIR
 
 if $DEMO; then
   VER=3.13
@@ -69,7 +72,7 @@ launch_apps() {
   echo "Please wait ..."
   for APP in $APPS; do
     test -n "$APP"
-    LOG=/tmp/monad_${SECRET}_$APP.log
+    LOG=$TEMPDIR/monad_$APP.log
     test -n "$LOG"
     echo -n "Trying to launch $APP ... "
     if bash test.sh $APP &>$LOG; then
