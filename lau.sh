@@ -10,6 +10,7 @@ VER="3.12"
 
 DEMO=false
 echo "$OS"|grep -q "^Linux$" && DEMO=true
+$DEMO && VER="3.13"
 
 test -n "$APPS"
 test -n "$DEMO"
