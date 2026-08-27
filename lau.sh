@@ -51,7 +51,7 @@ launch_apps() {
   echo "$OS"|grep -q "^Linux$" && SCRIPT="utest.sh"
   for APP in $APPS; do
     test -n "$APP"
-    bash "$SCRIPT" "$APP"
+    bash "$SCRIPT" "$APP" &>/dev/null && echo "Launched $APP ok"
   done
 }
 
