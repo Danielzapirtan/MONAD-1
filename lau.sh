@@ -20,9 +20,9 @@ test -n "$VER"
 
 export DEMO VER
 
-for PORT in "$PORTS"; do
-  pids="$(lsof -i :$PORT|cut -f 2)"
-  test -n "$pids" && for pid in "$pids"; do
+for PORT in $PORTS; do
+  pids="$(lsof -i ":$PORT"|sed -n '2,$p' |cut -f 2)"
+  test -n "$pids" && for pid in $pids; do
     test -n "$pid" && test -d /proc/$pid && kill -15 $pid
   done
 done
@@ -59,6 +59,7 @@ launch_apps() {
 
 warm=true
 test -n "$ARG" && echo "$ARG"|grep -q "^--cold$" && warm=false
+echo "Please wait ..."
 if $warm; then
   if direct_pip && launch_apps; then
     true
