@@ -40,12 +40,14 @@ export VER
 echo -n "Trying to set up the virtual environment ... "
 pkill -kill python$VER &>/dev/null || true
 command -v deactivate && deactivate &>/dev/null || true
-find . -type d -iname "*venv" | xargs rm -rf
+find . -type d -iname "venv" | xargs rm -rf
+find . -type d -iname ".venv" | xargs rm -rf
 rm -rf $HOME/.cache/pip
 python$VER -m venv .venv
 source .venv/bin/activate
 test -n "$VIRTUAL_ENV"
 export VIRTUAL_ENV
+pip install --upgrade pip
 echo "Ok"
 
 echo "Please wait ..."
