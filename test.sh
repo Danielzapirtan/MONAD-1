@@ -13,7 +13,7 @@ cd ./projects/$APP
 
 LOG=/tmp/ffmpeg_$SECRET.log
 if $DEMO; then
-  if sudo apt install -y ffmpeg &>$LOG; then
+  if command -v ffmpeg &>/dev/null || sudo apt install -y ffmpeg &>$LOG; then
     echo "Successfully installed ffmpeg"
   else
     echo "Failed to install ffmpeg."
@@ -21,7 +21,7 @@ if $DEMO; then
     false
   fi
 else
-  if brew install ffmpeg &>$LOG; then
+  if command -v ffmpeg &>/dev/null || brew install ffmpeg &>$LOG; then
     echo "Successfully installed ffmpeg"
   else
     echo "Failed to install ffmpeg."
@@ -41,7 +41,7 @@ fi
 
 LOG=/tmp/whispermlx_$SECRET.log
 if ! $DEMO; then
-  if pip install whispermlx &>$LOG; then
+  if command -v whispermlx &>/dev/null || pip install whispermlx &>$LOG; then
     echo "Successfully installed whispermlx"
   else
     echo "Failed to install whispermlx"
