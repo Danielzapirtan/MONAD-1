@@ -5,17 +5,19 @@ set -e
 APPS="$(ls projects)"
 ARG="$1"
 OS=$(uname)
+PORTS="5030 5034 5005"
 VER=3.13
 
 test -n "$APPS"
 test -n "$OS"
+test -n "$PORTS"
 test -n "$VER"
 
 echo $OS|grep -q "^Linux$"
 
 export VER
 
-for PORT in 5030 5034 5005; do
+for PORT in "$PORTS"; do
   pids="$(lsof -i :$PORT|cut -f 2)"
   test -n "$pids" && for pid in "$pids"; do
     test -d /proc/$pid && kill -15 $pid

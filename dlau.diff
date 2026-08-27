@@ -1,18 +1,19 @@
---- ulau.sh	2026-08-27 11:40:05.276138681 +0300
-+++ lau.sh	2026-08-27 11:46:17.308149183 +0300
-@@ -5,13 +5,13 @@
- APPS="$(ls projects)"
+--- lau.sh	2026-08-27 14:12:04.724153175 +0300
++++ ulau.sh	2026-08-27 14:16:47.764161165 +0300
+@@ -6,14 +6,14 @@
  ARG="$1"
  OS=$(uname)
--VER=3.13
-+VER=3.12
+ PORTS="5030 5034 5005"
+-VER=3.12
++VER=3.13
  
  test -n "$APPS"
  test -n "$OS"
+ test -n "$PORTS"
  test -n "$VER"
  
--echo $OS|grep -q "^Linux$"
-+echo $OS|grep -qv "^Linux$"
+-echo $OS|grep -qv "^Linux$"
++echo $OS|grep -q "^Linux$"
  
  export VER
  
