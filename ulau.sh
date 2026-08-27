@@ -3,6 +3,7 @@
 set -e
 
 APPS="$(ls projects)"
+ARG="$1"
 OS=$(uname)
 VER=3.13
 
@@ -31,30 +32,34 @@ purge_pip() {
   test -d "$VIRTUAL_ENV"
   export VIRTUAL_ENV
   pip install --upgrade pip &>/dev/null || true
-  echo "Ok"
 }
 
 direct_pip() {
   command -v deactivate &>/dev/null && deactivate || true
   test -d .venv || python$VER -m venv .venv
-  source .venv/bin/activate
+  source .venv/bin/activate || return
   test -n "$VIRTUAL_ENV"
   test -d "$VIRTUAL_ENV"
   export VIRTUAL_ENV
-  echo "Ok"
 }
 
 launch_apps() {
   for APP in $APPS; do
     test -n "$APP"
-    bash test.sh "$APP"
+    bash utest.sh "$APP"
   done
 }
 
-direct_pip
-if ! launch_apps; then
-  purge_pip
-  launch_apps
+warm=true
+test -n "$ARG" && echo "$ARG"|grep -q "^--cold$" && warm=false
+if $warm; then
+  if direct_pip && launch_apps; then
+    true
+  else
+    purge_pip && launch_apps
+  fi
+else
+  purge_pip && launch_apps
 fi
 
 echo "All apps have been launched"

@@ -14,7 +14,7 @@ if echo "$APP"|grep -qv "^bfc$"; then
 fi
 pip install -r requirements.txt &>/dev/null
 
-if ! python$VER app.py; then
-  false
-fi &
+python$VER app.py & pid=$!
+sleep 20
+test -d /proc/$pid
 
