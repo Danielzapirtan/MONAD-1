@@ -15,7 +15,7 @@ test -n "$OS"
 test -n "$PORTS"
 test -n "$VER"
 
-export VER
+export OS VER
 
 for PORT in "$PORTS"; do
   pids="$(lsof -i :$PORT|cut -f 2)"
