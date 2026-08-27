@@ -1,0 +1,8 @@
+13c13
+<   command -v ffmpeg &>/dev/null || apt install -y ffmpeg &>/dev/null
+---
+>   command -v ffmpeg &>/dev/null || brew install ffmpeg &>/dev/null
+15a16,18
+> if echo "$APP"|grep -q "^diarix$"; then
+>   command -v whispermlx &>/dev/null || pip install whispermlx &>/dev/null
+> fi
