@@ -6,55 +6,20 @@ APP="$1"
 
 test -n "$APP"
 test -n "$DEMO"
-test -n "$SECRET"
 test -n "$VER"
 
 cd ./projects/$APP
 
-LOG=/tmp/ffmpeg_$SECRET.log
-if $DEMO; then
-  if sudo apt install -y ffmpeg &>$LOG; then
-    echo "Successfully installed ffmpeg"
-  else
-    echo "Failed to install ffmpeg."
-    tail $LOG
-    false
-  fi
-else
-  if brew install ffmpeg &>$LOG; then
-    echo "Successfully installed ffmpeg"
-  else
-    echo "Failed to install ffmpeg."
-    tail $LOG
-    false
-  fi
+if echo "$APP"|grep -qv "^bfc$"; then
+  $DEMO || command -v ffmpeg &>/dev/null || brew install ffmpeg &>/dev/null
+  $DEMO && command -v ffmpeg &>/dev/null || apt update && apt install -y ffmpeg &>/dev/null
+fi
+pip install -r requirements.txt &>/dev/null
+if echo "$APP"|grep -q "^diarix$"; then
+  $DEMO || command -v whispermlx &>/dev/null || pip install whispermlx &>/dev/null
 fi
 
-LOG=/tmp/requirements_$SECRET.log
-if pip install -r requirements.txt &>$LOG; then
-  echo "Successfully installed requirements"
-else
-  echo "Failed to install python requirements"
-  tail $LOG
-  false
-fi
+python$VER app.py & pid=$!
+sleep 20
+test -d /proc/$pid
 
-LOG=/tmp/whispermlx_$SECRET.log
-if ! $DEMO; then
-  if pip install whispermlx &>$LOG; then
-    echo "Successfully installed whispermlx"
-  else
-    echo "Failed to install whispermlx"
-    tail $LOG
-    false
-  fi
-fi
-
-LOG=/tmp/app_$SECRET.log
-if ! python$VER app.py &>$LOG; then
-  echo "Failed to launch $APP"
-  tail $LOG
-  false
-else
-  echo "Successfully launch $APP"
-fi &

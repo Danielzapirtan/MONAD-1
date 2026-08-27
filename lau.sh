@@ -3,66 +3,73 @@
 set -e
 
 APPS="$(ls projects)"
+ARG="$1"
+OS="$(uname)"
+PORTS="5030 5034 5005"
+VER="3.12"
+
+DEMO=false
+echo "$OS"|grep -q "^Linux$" && DEMO=true
+$DEMO && VER="3.13"
+
 test -n "$APPS"
-CODE="7919"
-test -n "$CODE"
-rm -rf /tmp/*$CODE*.log
-export SECRET="$(date +%s)_$CODE"
-test -n "$SECRET"
-
-if command -v uname &>/dev/null; then
-  echo "$(uname) detected"
-  if uname | grep -q "^Linux$"; then
-    DEMO=true
-  else
-    DEMO=false
-  fi
-else
-  DEMO=false
-fi
 test -n "$DEMO"
-export DEMO
+test -n "$OS"
+test -n "$PORTS"
+test -n "$VER"
 
-if $DEMO; then
-  VER=3.13
-  ARCH=$(uname -m)
-  if echo $ARCH|grep -q "^aarch64$"; then
-    VER=3.14
+export DEMO VER
+
+for PORT in $PORTS; do
+  pids="$(lsof -i ":$PORT"|sed -n '2,$p' |cut -f 2)"
+  test -n "$pids" && for pid in $pids; do
+    test -n "$pid" && test -d /proc/$pid && kill -15 $pid
+  done
+done
+
+purge_pip() {
+  command -v deactivate &>/dev/null && deactivate || true
+  find . -type d -iname "venv" | xargs rm -rf || true
+  find . -type d -iname ".venv" | xargs rm -rf || true
+  rm -rf $HOME/.cache/pip || true
+  python$VER -m venv .venv
+  source .venv/bin/activate
+  test -n "$VIRTUAL_ENV"
+  test -d "$VIRTUAL_ENV"
+  export VIRTUAL_ENV
+  pip install --upgrade pip &>/dev/null || true
+}
+
+direct_pip() {
+  command -v deactivate &>/dev/null && deactivate || true
+  test -d .venv || python$VER -m venv .venv
+  source .venv/bin/activate || return
+  test -n "$VIRTUAL_ENV"
+  test -d "$VIRTUAL_ENV"
+  export VIRTUAL_ENV
+}
+
+launch_apps() {
+  SCRIPT="test.sh"
+  for APP in $APPS; do
+    test -n "$APP"
+    bash "$SCRIPT" "$APP" &>/dev/null && echo "Launched $APP ok"
+  done
+}
+
+warm=true
+test -n "$ARG" && echo "$ARG"|grep -q "^--cold$" && warm=false
+echo "Please wait ..."
+if $warm; then
+  if direct_pip && launch_apps; then
+    true
+  else
+    purge_pip && launch_apps
   fi
 else
-  VER=3.12
+  purge_pip && launch_apps
 fi
-command -v python$VER &>/dev/null || VER=$(python3 --version|grep -o "\<3\.[[:digit:]]\+")
-test -n "$VER"
-echo "Using python$VER"
-export VER
 
-echo -n "Trying to set up the virtual environment ... "
-pkill -kill python$VER &>/dev/null || true
-command -v deactivate && deactivate &>/dev/null || true
-find . -type d -iname "*venv" | xargs rm -rf
-rm -rf $HOME/.cache/pip
-python$VER -m venv .venv
-source .venv/bin/activate
-test -n "$VIRTUAL_ENV"
-export VIRTUAL_ENV
-echo "Ok"
-
-echo "Please wait ..."
-for APP in $APPS; do
-  test -n "$APP"
-  LOG=/tmp/monad_${SECRET}_$APP.log
-  test -n "$LOG"
-  echo -n "Trying to launch $APP ... "
-  if bash test.sh $APP &>$LOG; then
-  	echo "Ok"
-  else
-	echo ""
-	echo "Error log:"
-	tail -n 20 $LOG
-	false
-  fi
-done
 echo "All apps have been launched"
 echo "See them on ports 5030, 5034 and 5005"
 echo "Done."
