@@ -28,7 +28,7 @@ for PORT in $PORTS; do
 done
 
 purge_pip() {
-  command -v deactivate &>/dev/null && deactivate || true
+  command -v deactivate  && deactivate || true
   find . -type d -iname "venv" | xargs rm -rf || true
   find . -type d -iname ".venv" | xargs rm -rf || true
   rm -rf $HOME/.cache/pip || true
@@ -37,11 +37,11 @@ purge_pip() {
   test -n "$VIRTUAL_ENV"
   test -d "$VIRTUAL_ENV"
   export VIRTUAL_ENV
-  pip install --upgrade pip &>/dev/null || true
+  pip install --upgrade pip  || true
 }
 
 direct_pip() {
-  command -v deactivate &>/dev/null && deactivate || true
+  command -v deactivate  && deactivate || true
   test -d .venv || python$VER -m venv .venv
   source .venv/bin/activate || return
   test -n "$VIRTUAL_ENV"
@@ -53,7 +53,7 @@ launch_apps() {
   SCRIPT="test.sh"
   for APP in $APPS; do
     test -n "$APP"
-    bash "$SCRIPT" "$APP" &>/dev/null && echo "Launched $APP ok"
+    bash "$SCRIPT" "$APP"  && echo "Launched $APP ok"
   done
 }
 
