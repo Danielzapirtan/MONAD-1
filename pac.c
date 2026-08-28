@@ -6,7 +6,7 @@ int conv_by_line() {
 		int ch = getchar();
 		if (ch == 10) {
 			putchar(10);
-			system("date +%Y%m%d%H%M%S%N");
+			system("echo -n $(date +%Y%m%d%H%M%S%N)");
 			fflush(stdout);
 		} else {
 			putchar(ch);
