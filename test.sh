@@ -12,7 +12,7 @@ cd ./projects/$APP
 
 if echo "$APP"|grep -qv "^bfc$"; then
   $DEMO || command -v ffmpeg  || brew install ffmpeg 
-  $DEMO && command -v ffmpeg  || sudo apt update && sudo apt install -y ffmpeg 
+#  $DEMO && command -v ffmpeg  || sudo apt update && sudo apt install -y ffmpeg 
 fi
 pip install -r requirements.txt 
 if echo "$APP"|grep -q "^diarix$"; then
