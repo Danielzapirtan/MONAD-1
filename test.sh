@@ -11,12 +11,12 @@ test -n "$VER"
 cd ./projects/$APP
 
 if echo "$APP"|grep -qv "^bfc$"; then
-  $DEMO || command -v ffmpeg &>/dev/null || brew install ffmpeg &>/dev/null
-  $DEMO && command -v ffmpeg &>/dev/null || apt update && apt install -y ffmpeg &>/dev/null
+  $DEMO || command -v ffmpeg  || brew install ffmpeg 
+#  $DEMO && command -v ffmpeg  || sudo apt update && sudo apt install -y ffmpeg 
 fi
-pip install -r requirements.txt &>/dev/null
+pip install -r requirements.txt 
 if echo "$APP"|grep -q "^diarix$"; then
-  $DEMO || command -v whispermlx &>/dev/null || pip install whispermlx &>/dev/null
+  $DEMO || command -v whispermlx  || pip install whispermlx 
 fi
 
 python$VER app.py & pid=$!
