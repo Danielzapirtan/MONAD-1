@@ -8,7 +8,7 @@ int conv_by_line() {
 			putchar(10);
 			system("echo -n $(date +%Y%m%d%H%M%S%N)'\t'");
 			fflush(stdout);
-		} else {
+		} else if (ch != EOF) {
 			putchar(ch);
 		}
 	}
