@@ -39,7 +39,7 @@ import requests
 # starts (and other formats still work) if one library isn't installed.
 # ---------------------------------------------------------------------------
 try:
-    import fitz  # PyMuPDF
+    import PyMuPDF
 except ImportError:
     fitz = None
 
