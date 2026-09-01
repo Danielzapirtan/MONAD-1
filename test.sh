@@ -20,6 +20,6 @@ if echo "$APP"|grep -q "^diarix$"; then
 fi
 
 python$VER app.py & pid=$!
-sleep 20
+sleep 8
 test -d /proc/$pid
 
