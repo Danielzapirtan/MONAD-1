@@ -11,5 +11,5 @@ cd $HOME
 rm -rf $REPO
 git clone https://github.com/$OWNER/$REPO.git
 cd $REPO
-zsh install_aliases.sh
+zsh instal
 
