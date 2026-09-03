@@ -1,0 +1,5 @@
+# ~/.zsh_aliases
+
+cd ~/MONAD
+
+bash lau.sh --cold &>$HOME/lau.log &
