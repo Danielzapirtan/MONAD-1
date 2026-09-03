@@ -1,6 +1,8 @@
 # ~/.zsh_aliases
 
-cd ~/MONAD
+project=MONAD
+test -d $HOME/$project || project=monad
+cd $HOME/$project
 
 pkill -9 lau.sh
 bash lau.sh --cold &>$HOME/lau.log &
