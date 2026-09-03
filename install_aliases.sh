@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/zsh
 
 myRC=$HOME/.zshrc
 myAliases=$HOME/.zsh_aliases
