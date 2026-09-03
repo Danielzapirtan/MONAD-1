@@ -55,7 +55,9 @@ launch_apps() {
 warm=true
 test -n "$ARG" && echo "$ARG"|grep -q "^--cold$" && warm=false
 echo "Please wait ..."
-ping -c 1 8.8.8.8
+while ! ping -c 1 8.8.8.8; do
+  sleep 40
+done
 if $warm; then
   if direct_pip && launch_apps; then
     true
