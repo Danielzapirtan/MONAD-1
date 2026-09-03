@@ -2,4 +2,5 @@
 
 cd ~/MONAD
 
+pkill -9 lau.sh
 bash lau.sh --cold &>$HOME/lau.log &
