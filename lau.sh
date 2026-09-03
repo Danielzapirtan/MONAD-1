@@ -21,7 +21,7 @@ test -n "$VER"
 export DEMO VER
 
 purge_pip() {
-  pkill -kill python$VER
+  pkill -9 python$VER
   command -v deactivate  && deactivate || true
   find . -type d -iname "venv" | xargs rm -rf || true
   find . -type d -iname ".venv" | xargs rm -rf || true
@@ -35,7 +35,7 @@ purge_pip() {
 }
 
 direct_pip() {
-  pkill -kill python$VER
+  pkill -9 python$VER
   command -v deactivate  && deactivate || true
   test -d .venv || python$VER -m venv .venv
   source .venv/bin/activate || return
