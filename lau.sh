@@ -48,14 +48,14 @@ launch_apps() {
   SCRIPT="test.sh"
   for APP in $APPS; do
     test -n "$APP"
-    bash "$SCRIPT" "$APP"  && echo "Launched $APP ok"
+    bash "$SCRIPT" "$APP" && echo "Launched $APP ok"
   done
 }
 
 warm=true
 test -n "$ARG" && echo "$ARG"|grep -q "^--cold$" && warm=false
 echo "Please wait ..."
-while ! ping -c 1 8.8.8.8; do
+while ! ping -c 1 8.8.8.8 &>/dev/null; do
   sleep 40
 done
 if $warm; then
