@@ -3,8 +3,8 @@
 myRC=$HOME/.zshrc
 myAliases=$HOME/.zsh_aliases
 
-test -f $myAliases || {
+if ! test -f $myAliases; then
   echo "test -f $myAliases && source $myAliases" >>$myRC
-  cp zsh_aliases $myAliases
-}
+fi
 
+cp -a zsh_aliases $myAliases
