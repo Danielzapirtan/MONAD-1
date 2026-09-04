@@ -1,0 +1,40 @@
+name: PyInstaller build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.11]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install setuptools wheel
+
+      - name: Run PyInstaller builds
+        env:
+          RUNNER_OS: ${{ matrix.os }}
+        run: |
+          chmod +x tools/pyinstaller/build_all.sh
+          ./tools/pyinstaller/build_all.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pyinstaller-${{ matrix.os }}
+          path: dist/**
