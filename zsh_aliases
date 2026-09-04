@@ -1,8 +1,29 @@
 # ~/.zsh_aliases
+# Source this file in ~/.zshrc with: source ~/monad/zsh_aliases
+#
+# This will automatically start/check Flask servers when a new terminal opens,
+# avoiding port conflicts and gracefully managing existing processes.
 
-project=MONAD
-test -d $HOME/$project || project=monad
-cd $HOME/$project
+# Find the monad repo directory
+MONAD_ROOT="${MONAD_ROOT:-}"
+if [[ -z "$MONAD_ROOT" ]]; then
+  if [[ -d "$HOME/monad" ]]; then
+    MONAD_ROOT="$HOME/monad"
+  elif [[ -d "$HOME/MONAD" ]]; then
+    MONAD_ROOT="$HOME/MONAD"
+  elif [[ -d "$(pwd)/monad" ]]; then
+    MONAD_ROOT="$(pwd)/monad"
+  else
+    # Try to find it by looking for the start_flask_servers.sh script
+    MONAD_ROOT=$(find ~ -maxdepth 3 -type f -name "start_flask_servers.sh" -exec dirname {} \; 2>/dev/null | head -1)
+  fi
+fi
 
-pkill -9 lau.sh
-bash lau.sh --cold &>$HOME/lau.log &
+# Auto-start Flask servers if the launcher script exists
+if [[ -n "$MONAD_ROOT" && -f "$MONAD_ROOT/start_flask_servers.sh" ]]; then
+  # Check if servers are already running
+  if ! "$MONAD_ROOT/start_flask_servers.sh" check &>/dev/null 2>&1; then
+    # If not all running, start them in the background
+    nohup "$MONAD_ROOT/start_flask_servers.sh" start &>/dev/null 2>&1 &
+  fi
+fi
