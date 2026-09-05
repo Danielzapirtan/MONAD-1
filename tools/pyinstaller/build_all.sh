@@ -60,7 +60,9 @@ build_project() {
 
   # Build one-file executable
   pyinstaller_args=(--noconfirm --onefile --name "$name" app.py --distpath "$outdir")
-  pyinstaller_args+=("${add_data_args[@]}")
+  if ((${#add_data_args[@]} > 0)); then
+    pyinstaller_args+=("${add_data_args[@]}")
+  fi
   pyinstaller "${pyinstaller_args[@]}"
 
   popd > /dev/null
