@@ -25,7 +25,7 @@ kill_old() {
     pids="$(lsof -i ":$PORT"|grep -v COMMAND|tr -s " " |cut -f 2 -d\ )"
     test -n "$pids" && for pid in $pids; do
       echo "killing process $pid (was using port $PORT)"
-      kill -term $pid || kill -kill $pid
+      kill -term $pid
     done
   done
 }
