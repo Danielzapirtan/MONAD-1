@@ -1910,5 +1910,5 @@ PAGE_HTML = r"""<!DOCTYPE html>
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5034))
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"
-    app.run(host="127.0.0.1", port=port, debug=debug)
+    app.run(host="0.0.0.0", port=port, debug=debug)
 
