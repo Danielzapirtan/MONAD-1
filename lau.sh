@@ -20,8 +20,18 @@ test -n "$VER"
 
 export DEMO VER
 
+kill_old() {
+  for PORT in $PORTS; do
+    pids="$(lsof -i ":$PORT"|grep -v COMMAND|cut -b 10-16)"
+    test -n "$pids" && for pid in $pids; do
+      echo "killing process $pid (was using port $PORT)"
+      kill -term $pid || kill -kill $pid
+    done
+  done
+}
+
 purge_pip() {
-  pkill -9 python$VER
+  kill_old
   command -v deactivate  && deactivate || true
   find . -type d -iname "venv" | xargs rm -rf || true
   find . -type d -iname ".venv" | xargs rm -rf || true
@@ -35,7 +45,7 @@ purge_pip() {
 }
 
 direct_pip() {
-  pkill -9 python$VER
+  kill_old
   command -v deactivate  && deactivate || true
   test -d .venv || python$VER -m venv .venv
   source .venv/bin/activate || return
