@@ -16,12 +16,9 @@ fi
 
 mkdir -p "$DIST_ROOT"
 
-# Projects to build (name:path)
-declare -A PROJECTS=(
-  [bfc]="$ROOT/projects/bfc"
-  [diarix]="$ROOT/projects/diarix"
-  [vd]="$ROOT/projects/vd"
-)
+# PyInstaller must run on the target OS. RUNNER_OS is supplied by CI, while
+# uname keeps local builds portable and compatible with macOS's Bash 3.2.
+OS_NAME="${RUNNER_OS:-$(uname -s)}"
 
 # Ensure pyinstaller available
 install_venv() {
@@ -58,11 +55,13 @@ build_project() {
   rm -rf build dist "${name}.spec"
 
   # Dist output dir specific per project
-  local outdir="$DIST_ROOT/${name}-$RUNNER_OS"
+  local outdir="$DIST_ROOT/${name}-$OS_NAME"
   mkdir -p "$outdir"
 
   # Build one-file executable
-  pyinstaller --noconfirm --onefile --name "$name" "app.py" --distpath "$outdir" "${add_data_args[@]:+${add_data_args[@]}}"
+  pyinstaller_args=(--noconfirm --onefile --name "$name" app.py --distpath "$outdir")
+  pyinstaller_args+=("${add_data_args[@]}")
+  pyinstaller "${pyinstaller_args[@]}"
 
   popd > /dev/null
 }
@@ -71,9 +70,9 @@ main() {
   echo "Using root: $ROOT"
   install_venv
 
-  for name in "${!PROJECTS[@]}"; do
-    build_project "$name" "${PROJECTS[$name]}"
-  done
+  build_project bfc "$ROOT/projects/bfc"
+  build_project diarix "$ROOT/projects/diarix"
+  build_project vd "$ROOT/projects/vd"
 
   echo "\nBuild complete. Artifacts are in: $DIST_ROOT"
   ls -la "$DIST_ROOT" || true
